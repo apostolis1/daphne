@@ -25,8 +25,8 @@
 // Convenience function
 // ****************************************************************************
 
-void decRef(const Structure * arg, DCTX(ctx)) {
+void decRef(const Structure *arg, DCTX(ctx)) {
     DataObjectFactory::destroy(arg);
 }
 
-#endif //SRC_RUNTIME_LOCAL_KERNELS_DECREF_H
+#endif // SRC_RUNTIME_LOCAL_KERNELS_DECREF_H

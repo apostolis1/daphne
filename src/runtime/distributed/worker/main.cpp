@@ -14,16 +14,13 @@
  *  limitations under the License.
  */
 
-
 #include <iostream>
 
 #include "WorkerImpl.h"
 #include "WorkerImplGRPCAsync.h"
 #include "WorkerImplGRPCSync.h"
 
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     DaphneUserConfig user_config{};
     auto logger = std::make_unique<DaphneLogger>(user_config);
 
@@ -35,7 +32,7 @@ int main(int argc, char *argv[])
 
     // TODO choose specific implementation based on arguments or config file
     WorkerImpl *service = new WorkerImplGRPCSync(addr, user_config);
-    
+
     std::cout << "Started Distributed Worker on `" << addr << "`\n";
     service->Wait();
 

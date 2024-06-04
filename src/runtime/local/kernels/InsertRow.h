@@ -31,59 +31,61 @@
 // Struct for partial template specialization
 // ****************************************************************************
 
-template<class DTArg, class DTIns, typename VTSel>
-struct InsertRow {
-    static void apply(
-        DTArg *& res,
-        const DTArg * arg, const DTIns * ins,
-        const VTSel rowLowerIncl, const VTSel rowUpperExcl,
-        DCTX(ctx)
-    ) = delete;
+template <class DTArg, class DTIns, typename VTSel> struct InsertRow {
+    static void apply(DTArg *&res, const DTArg *arg, const DTIns *ins,
+                      const VTSel rowLowerIncl, const VTSel rowUpperExcl,
+                      DCTX(ctx)) = delete;
 };
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DTArg, class DTIns, typename VTSel>
-void insertRow(
-        DTArg *& res,
-        const DTArg * arg, const DTIns * ins,
-        const VTSel rowLowerIncl, const VTSel rowUpperExcl,
-        DCTX(ctx)
-) {
-    InsertRow<DTArg, DTIns, VTSel>::apply(res, arg, ins, rowLowerIncl, rowUpperExcl, ctx);
+template <class DTArg, class DTIns, typename VTSel>
+void insertRow(DTArg *&res, const DTArg *arg, const DTIns *ins,
+               const VTSel rowLowerIncl, const VTSel rowUpperExcl, DCTX(ctx)) {
+    InsertRow<DTArg, DTIns, VTSel>::apply(res, arg, ins, rowLowerIncl,
+                                          rowUpperExcl, ctx);
 }
 
 // ****************************************************************************
 // Boundary validation
 // ****************************************************************************
 
-template<typename VTSel>
-void validateArgsInsertRow(size_t rowLowerIncl_Size, VTSel rowLowerIncl, size_t rowUpperExcl_Size, VTSel rowUpperExcl,
-                    size_t numRowsArg, size_t numColsArg, size_t numRowsIns, size_t numColsIns) {
-    
-    if (rowLowerIncl_Size < 0 || rowUpperExcl_Size < rowLowerIncl_Size || numRowsArg < rowUpperExcl_Size
-        || (rowLowerIncl_Size == numRowsArg && rowLowerIncl_Size != 0)) {
+template <typename VTSel>
+void validateArgsInsertRow(size_t rowLowerIncl_Size, VTSel rowLowerIncl,
+                           size_t rowUpperExcl_Size, VTSel rowUpperExcl,
+                           size_t numRowsArg, size_t numColsArg,
+                           size_t numRowsIns, size_t numColsIns) {
+
+    if (rowLowerIncl_Size < 0 || rowUpperExcl_Size < rowLowerIncl_Size ||
+        numRowsArg < rowUpperExcl_Size ||
+        (rowLowerIncl_Size == numRowsArg && rowLowerIncl_Size != 0)) {
         std::ostringstream errMsg;
         errMsg << "invalid arguments '" << rowLowerIncl << ", " << rowUpperExcl
-                << "' passed to InsertRow: it must hold 0 <= rowLowerIncl <= rowUpperExcl <= #rows "
-                << "and rowLowerIncl < #rows (unless both are zero) where #rows of arg is '" << numRowsArg << "'";
+               << "' passed to InsertRow: it must hold 0 <= rowLowerIncl <= "
+                  "rowUpperExcl <= #rows "
+               << "and rowLowerIncl < #rows (unless both are zero) where #rows "
+                  "of arg is '"
+               << numRowsArg << "'";
         throw std::out_of_range(errMsg.str());
     }
-    
-    if(numRowsIns != rowUpperExcl_Size - rowLowerIncl_Size){
+
+    if (numRowsIns != rowUpperExcl_Size - rowLowerIncl_Size) {
         std::ostringstream errMsg;
         errMsg << "invalid arguments '" << rowLowerIncl << ", " << rowUpperExcl
-                << "' passed to InsertRow: the number of addressed rows in arg '" << rowUpperExcl_Size - rowLowerIncl_Size
-                << "' and the number of rows in ins '" << numRowsIns << "' must match";
+               << "' passed to InsertRow: the number of addressed rows in arg '"
+               << rowUpperExcl_Size - rowLowerIncl_Size
+               << "' and the number of rows in ins '" << numRowsIns
+               << "' must match";
         throw std::runtime_error(errMsg.str());
     }
-    
-    if(numColsIns != numColsArg) {
+
+    if (numColsIns != numColsArg) {
         std::ostringstream errMsg;
-        errMsg << "invalid arguments passed to InsertRow: the number of columns in arg '" << numColsArg
-                << "' and ins '" << numColsIns << "' must match";
+        errMsg << "invalid arguments passed to InsertRow: the number of "
+                  "columns in arg '"
+               << numColsArg << "' and ins '" << numColsIns << "' must match";
         throw std::runtime_error(errMsg.str());
     }
 }
@@ -96,48 +98,49 @@ void validateArgsInsertRow(size_t rowLowerIncl_Size, VTSel rowLowerIncl, size_t 
 // DenseMatrix <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT, typename VTSel>
+template <typename VT, typename VTSel>
 struct InsertRow<DenseMatrix<VT>, DenseMatrix<VT>, VTSel> {
-    static void apply(
-            DenseMatrix<VT> *& res,
-            const DenseMatrix<VT> * arg, const DenseMatrix<VT> * ins,
-            VTSel rowLowerIncl, VTSel rowUpperExcl,
-            DCTX(ctx)
-    ) {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<VT> *arg,
+                      const DenseMatrix<VT> *ins, VTSel rowLowerIncl,
+                      VTSel rowUpperExcl, DCTX(ctx)) {
         const size_t numRowsArg = arg->getNumRows();
         const size_t numColsArg = arg->getNumCols();
         const size_t numRowsIns = ins->getNumRows();
         const size_t numColsIns = ins->getNumCols();
 
-        const size_t rowLowerIncl_Size = static_cast<const size_t>(rowLowerIncl);
-        const size_t rowUpperExcl_Size = static_cast<const size_t>(rowUpperExcl);
-        
-        validateArgsInsertRow(rowLowerIncl_Size, rowLowerIncl, rowUpperExcl_Size, rowUpperExcl,
-                    numRowsArg, numColsArg, numRowsIns, numColsIns);
+        const size_t rowLowerIncl_Size =
+            static_cast<const size_t>(rowLowerIncl);
+        const size_t rowUpperExcl_Size =
+            static_cast<const size_t>(rowUpperExcl);
 
-        if(res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRowsArg, numColsArg, false);
-        
-        VT * valuesRes = res->getValues();
-        const VT * valuesArg = arg->getValues();
-        const VT * valuesIns = ins->getValues();
+        validateArgsInsertRow(rowLowerIncl_Size, rowLowerIncl,
+                              rowUpperExcl_Size, rowUpperExcl, numRowsArg,
+                              numColsArg, numRowsIns, numColsIns);
+
+        if (res == nullptr)
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRowsArg,
+                                                             numColsArg, false);
+
+        VT *valuesRes = res->getValues();
+        const VT *valuesArg = arg->getValues();
+        const VT *valuesIns = ins->getValues();
         const size_t rowSkipRes = res->getRowSkip();
         const size_t rowSkipArg = arg->getRowSkip();
         const size_t rowSkipIns = ins->getRowSkip();
-        
+
         // TODO Can be simplified/more efficient in certain cases.
-        for(size_t r = 0; r < rowLowerIncl_Size; r++) {
+        for (size_t r = 0; r < rowLowerIncl_Size; r++) {
             memcpy(valuesRes, valuesArg, numColsArg * sizeof(VT));
             valuesRes += rowSkipRes;
             valuesArg += rowSkipArg;
         }
-        for(size_t r = rowLowerIncl_Size; r < rowUpperExcl_Size; r++) {
+        for (size_t r = rowLowerIncl_Size; r < rowUpperExcl_Size; r++) {
             memcpy(valuesRes, valuesIns, numColsArg * sizeof(VT));
             valuesRes += rowSkipRes;
             valuesIns += rowSkipIns;
         }
         valuesArg += rowSkipArg * numRowsIns; // skip rows in arg
-        for(size_t r = rowUpperExcl_Size; r < numRowsArg; r++) {
+        for (size_t r = rowUpperExcl_Size; r < numRowsArg; r++) {
             memcpy(valuesRes, valuesArg, numColsArg * sizeof(VT));
             valuesRes += rowSkipRes;
             valuesArg += rowSkipArg;
@@ -145,4 +148,4 @@ struct InsertRow<DenseMatrix<VT>, DenseMatrix<VT>, VTSel> {
     }
 };
 
-#endif //SRC_RUNTIME_LOCAL_KERNELS_INSERTROW_H
+#endif // SRC_RUNTIME_LOCAL_KERNELS_INSERTROW_H

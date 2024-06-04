@@ -18,13 +18,13 @@
 
 #include <runtime/local/datastructures/ValueTypeCode.h>
 
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
 
 /**
  * @brief Very simple representation of basic file meta data.
- * 
+ *
  * Currently tailored to frames.
  */
 struct FileMetaData {
@@ -34,38 +34,24 @@ struct FileMetaData {
     std::vector<ValueTypeCode> schema;
     std::vector<std::string> labels;
     const ssize_t numNonZeros;
-    
+
     /**
      * @brief Construct a new File Meta Data object for Frames
      */
-    FileMetaData(
-        size_t numRows,
-        size_t numCols,
-        bool isSingleValueType,
-        std::vector<ValueTypeCode> schema,
-        std::vector<std::string> labels,
-        ssize_t numNonZeros = -1
-    ) :
-        numRows(numRows), numCols(numCols),
-        isSingleValueType(isSingleValueType),
-        schema(std::move(schema)),
-        labels(std::move(labels)),
-        numNonZeros(numNonZeros) {}
+    FileMetaData(size_t numRows, size_t numCols, bool isSingleValueType,
+                 std::vector<ValueTypeCode> schema,
+                 std::vector<std::string> labels, ssize_t numNonZeros = -1)
+        : numRows(numRows), numCols(numCols),
+          isSingleValueType(isSingleValueType), schema(std::move(schema)),
+          labels(std::move(labels)), numNonZeros(numNonZeros) {}
 
     /**
      * @brief Construct a new File Meta Data object for Matrix
      */
-    FileMetaData(
-        size_t numRows,
-        size_t numCols,
-        bool isSingleValueType,
-        ValueTypeCode valueType,
-        ssize_t numNonZeros = -1
-    ) :
-        numRows(numRows), numCols(numCols),
-        isSingleValueType(isSingleValueType),
-        numNonZeros(numNonZeros)
-    {
+    FileMetaData(size_t numRows, size_t numCols, bool isSingleValueType,
+                 ValueTypeCode valueType, ssize_t numNonZeros = -1)
+        : numRows(numRows), numCols(numCols),
+          isSingleValueType(isSingleValueType), numNonZeros(numNonZeros) {
         schema.emplace_back(valueType);
     }
 };

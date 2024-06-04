@@ -19,15 +19,17 @@
 
 namespace mlir::OpTrait {
 
-template<class ConcreteOp>
+template <class ConcreteOp>
 class CastArgsToResType : public TraitBase<ConcreteOp, CastArgsToResType> {};
 
-template<class ConcreteOp>
-class CastFirstTwoArgsToResType : public TraitBase<ConcreteOp, CastFirstTwoArgsToResType> {};
+template <class ConcreteOp>
+class CastFirstTwoArgsToResType
+    : public TraitBase<ConcreteOp, CastFirstTwoArgsToResType> {};
 
-template<class ConcreteOp>
-class CastArgsToResTypeRandMatrixOp : public TraitBase<ConcreteOp, CastArgsToResTypeRandMatrixOp> {};
+template <class ConcreteOp>
+class CastArgsToResTypeRandMatrixOp
+    : public TraitBase<ConcreteOp, CastArgsToResTypeRandMatrixOp> {};
 
-}
+} // namespace mlir::OpTrait
 
-#endif //SRC_IR_DAPHNEIR_DAPHNEADAPTTYPESTOKERNELSTRAITS_H
+#endif // SRC_IR_DAPHNEIR_DAPHNEADAPTTYPESTOKERNELSTRAITS_H

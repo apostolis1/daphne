@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+#include <runtime/local/datagen/GenGivenVals.h>
 #include <runtime/local/datastructures/DataObjectFactory.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
-#include <runtime/local/datagen/GenGivenVals.h>
 #include <runtime/local/kernels/CheckEq.h>
 #include <runtime/local/kernels/Recode.h>
 
@@ -28,25 +28,27 @@
 
 #include <cstdint>
 
-template<class DTRes, class DTDict, class DTArg>
-void checkRecode(const DTArg * arg, bool orderPreserving, const DTRes * expRes, const DTDict * expDict) {
-    DTRes * res = nullptr;
-    DTDict * dict = nullptr;
+template <class DTRes, class DTDict, class DTArg>
+void checkRecode(const DTArg *arg, bool orderPreserving, const DTRes *expRes,
+                 const DTDict *expDict) {
+    DTRes *res = nullptr;
+    DTDict *dict = nullptr;
     recode<DTRes, DTDict, DTArg>(res, dict, arg, orderPreserving, nullptr);
     CHECK(*res == *expRes);
     CHECK(*dict == *expDict);
     DataObjectFactory::destroy(res, dict);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("Recode", TAG_KERNELS, (DenseMatrix), (double, uint32_t)) {
+TEMPLATE_PRODUCT_TEST_CASE("Recode", TAG_KERNELS, (DenseMatrix),
+                           (double, uint32_t)) {
     using DTArg = TestType;
     using VTArg = typename DTArg::VT;
     using DTRes = typename DTArg::template WithValueType<int64_t>;
     using DTDict = DenseMatrix<VTArg>;
-    
-    DTArg * arg = nullptr;
-    DTRes * expRes = nullptr;
-    DTArg * expDict = nullptr;
+
+    DTArg *arg = nullptr;
+    DTRes *expRes = nullptr;
+    DTArg *expDict = nullptr;
 
     SECTION("empty arg, non-order-preserving recoding") {
         arg = DataObjectFactory::create<DTArg>(0, 1, false);

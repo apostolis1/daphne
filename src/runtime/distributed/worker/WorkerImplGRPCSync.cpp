@@ -14,16 +14,17 @@
  *  limitations under the License.
  */
 
-
 #include "WorkerImplGRPCSync.h"
 
-#include <runtime/local/io/DaphneSerializer.h>
 #include <runtime/local/datastructures/DataObjectFactory.h>
+#include <runtime/local/io/DaphneSerializer.h>
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
 
-WorkerImplGRPCSync::WorkerImplGRPCSync(const std::string& addr, DaphneUserConfig& _cfg) : WorkerImpl(_cfg)
+WorkerImplGRPCSync::WorkerImplGRPCSync(const std::string &addr,
+                                       DaphneUserConfig &_cfg)
+    : WorkerImpl(_cfg)
 
 {
     builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
@@ -33,14 +34,12 @@ WorkerImplGRPCSync::WorkerImplGRPCSync(const std::string& addr, DaphneUserConfig
     server = builder.BuildAndStart();
 }
 
-void WorkerImplGRPCSync::Wait() {
-    server->Wait();
-}
+void WorkerImplGRPCSync::Wait() { server->Wait(); }
 
-grpc::Status WorkerImplGRPCSync::Store(::grpc::ServerContext *context,
-                         ::grpc::ServerReader< ::distributed::Data>* reader,
-                         ::distributed::StoredData *response) 
-{
+grpc::Status
+WorkerImplGRPCSync::Store(::grpc::ServerContext *context,
+                          ::grpc::ServerReader<::distributed::Data> *reader,
+                          ::distributed::StoredData *response) {
     StoredInfo storedInfo;
     distributed::Data data;
     reader->Read(&data);
@@ -50,31 +49,37 @@ grpc::Status WorkerImplGRPCSync::Store(::grpc::ServerContext *context,
     if (DF_Dtype(buffer) == DF_data_t::Value_t) {
         double val = DaphneSerializer<double>::deserialize(buffer);
         storedInfo = WorkerImpl::Store(&val);
-        
+
         response->set_identifier(storedInfo.identifier);
         response->set_num_rows(storedInfo.numRows);
         response->set_num_cols(storedInfo.numCols);
     } else {
         deserializer.reset(new DaphneDeserializerChunks<Structure>(&mat, len));
-        deserializerIter.reset(new DaphneDeserializerChunks<Structure>::Iterator(deserializer->begin()));    
+        deserializerIter.reset(
+            new DaphneDeserializerChunks<Structure>::Iterator(
+                deserializer->begin()));
 
         (*deserializerIter)->second->resize(len);
         (*deserializerIter)->first = len;
-        
+
         if ((*deserializerIter)->second->size() < len)
             (*deserializerIter)->second->resize(len);
-        (*deserializerIter)->second->assign(static_cast<const char*>(buffer), static_cast<const char*>(buffer) + len);
-        
+        (*deserializerIter)
+            ->second->assign(static_cast<const char *>(buffer),
+                             static_cast<const char *>(buffer) + len);
+
         // advance iterator, this also partially deserializes
         ++(*deserializerIter);
-        while (reader->Read(&data)){
+        while (reader->Read(&data)) {
             buffer = data.bytes().data();
             len = data.bytes().size();
             (*deserializerIter)->first = len;
             if ((*deserializerIter)->second->size() < len)
                 (*deserializerIter)->second->resize(len);
-            (*deserializerIter)->second->assign(static_cast<const char*>(buffer), static_cast<const char*>(buffer) + len);
-            
+            (*deserializerIter)
+                ->second->assign(static_cast<const char *>(buffer),
+                                 static_cast<const char *>(buffer) + len);
+
             // advance iterator, this also partially deserializes
             ++(*deserializerIter);
         }
@@ -86,21 +91,22 @@ grpc::Status WorkerImplGRPCSync::Store(::grpc::ServerContext *context,
     return ::grpc::Status::OK;
 }
 
-grpc::Status WorkerImplGRPCSync::Compute(::grpc::ServerContext *context,
-                         const ::distributed::Task *request,
-                         ::distributed::ComputeResult *response)
-{
+grpc::Status
+WorkerImplGRPCSync::Compute(::grpc::ServerContext *context,
+                            const ::distributed::Task *request,
+                            ::distributed::ComputeResult *response) {
     std::vector<StoredInfo> inputs;
     inputs.reserve(request->inputs().size());
 
     std::vector<StoredInfo> outputs = std::vector<StoredInfo>();
-    for (auto input : request->inputs()){
+    for (auto input : request->inputs()) {
         auto stored = input.stored();
-        inputs.push_back(StoredInfo({stored.identifier(), stored.num_rows(), stored.num_cols()}));
+        inputs.push_back(StoredInfo(
+            {stored.identifier(), stored.num_rows(), stored.num_cols()}));
     }
     auto respMsg = WorkerImpl::Compute(&outputs, inputs, request->mlir_code());
-    for (auto output : outputs){        
-        distributed::WorkData workData;        
+    for (auto output : outputs) {
+        distributed::WorkData workData;
         workData.mutable_stored()->set_identifier(output.identifier);
         workData.mutable_stored()->set_num_rows(output.numRows);
         workData.mutable_stored()->set_num_cols(output.numCols);
@@ -109,14 +115,16 @@ grpc::Status WorkerImplGRPCSync::Compute(::grpc::ServerContext *context,
     if (respMsg.ok())
         return ::grpc::Status::OK;
     else
-        return ::grpc::Status(grpc::StatusCode::ABORTED, respMsg.error_message());        
+        return ::grpc::Status(grpc::StatusCode::ABORTED,
+                              respMsg.error_message());
 }
 
-grpc::Status WorkerImplGRPCSync::Transfer(::grpc::ServerContext *context,
-                          const ::distributed::StoredData *request,
-                         ::distributed::Data *response)
-{
-    StoredInfo info({request->identifier(), request->num_rows(), request->num_cols()});
+grpc::Status
+WorkerImplGRPCSync::Transfer(::grpc::ServerContext *context,
+                             const ::distributed::StoredData *request,
+                             ::distributed::Data *response) {
+    StoredInfo info(
+        {request->identifier(), request->num_rows(), request->num_cols()});
     std::vector<char> buffer;
     size_t bufferLength;
     Structure *mat = WorkerImpl::Transfer(info);

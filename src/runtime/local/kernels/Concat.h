@@ -25,15 +25,15 @@
 // Convenience function
 // ****************************************************************************
 
-void concat(char *& res, const char * lhs, const char * rhs, DCTX(ctx)) {
+void concat(char *&res, const char *lhs, const char *rhs, DCTX(ctx)) {
     const auto lenLhs = std::string_view(lhs).size();
     const auto lenRhs = std::string_view(rhs).size();
     const auto lenRes = lenLhs + lenRhs;
-    
-    if(res == nullptr)
+
+    if (res == nullptr)
         res = new char[lenRes + 1];
-    
-    std::memcpy(res         , lhs, lenLhs);
+
+    std::memcpy(res, lhs, lenLhs);
     std::memcpy(res + lenLhs, rhs, lenRhs);
     res[lenRes] = '\0';
 }

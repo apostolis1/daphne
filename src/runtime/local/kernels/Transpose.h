@@ -27,17 +27,16 @@
 // Struct for partial template specialization
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-struct Transpose {
-    static void apply(DTRes *& res, const DTArg * arg, DCTX(ctx)) = delete;
+template <class DTRes, class DTArg> struct Transpose {
+    static void apply(DTRes *&res, const DTArg *arg, DCTX(ctx)) = delete;
 };
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-void transpose(DTRes *& res, const DTArg * arg, DCTX(ctx)) {
+template <class DTRes, class DTArg>
+void transpose(DTRes *&res, const DTArg *arg, DCTX(ctx)) {
     Transpose<DTRes, DTArg>::apply(res, arg, ctx);
 }
 
@@ -49,20 +48,20 @@ void transpose(DTRes *& res, const DTArg * arg, DCTX(ctx)) {
 // DenseMatrix <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct Transpose<DenseMatrix<VT>, DenseMatrix<VT>> {
-    static void apply(DenseMatrix<VT> *& res, const DenseMatrix<VT> * arg, DCTX(ctx)) {
+template <typename VT> struct Transpose<DenseMatrix<VT>, DenseMatrix<VT>> {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<VT> *arg,
+                      DCTX(ctx)) {
         const size_t numRows = arg->getNumRows();
         const size_t numCols = arg->getNumCols();
-        
+
         // skip data movement for vectors
         if ((numRows == 1 || numCols == 1) && !arg->isView()) {
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numCols, numRows, arg);
-        }
-        else
-        {
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numCols, numRows,
+                                                             arg);
+        } else {
             if (res == nullptr)
-                res = DataObjectFactory::create<DenseMatrix<VT>>(numCols, numRows, false);
+                res = DataObjectFactory::create<DenseMatrix<VT>>(
+                    numCols, numRows, false);
 
             const VT *valuesArg = arg->getValues();
             const size_t rowSkipArg = arg->getRowSkip();
@@ -83,38 +82,40 @@ struct Transpose<DenseMatrix<VT>, DenseMatrix<VT>> {
 // CSRMatrix <- CSRMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct Transpose<CSRMatrix<VT>, CSRMatrix<VT>> {
-    static void apply(CSRMatrix<VT> *& res, const CSRMatrix<VT> * arg, DCTX(ctx)) {
+template <typename VT> struct Transpose<CSRMatrix<VT>, CSRMatrix<VT>> {
+    static void apply(CSRMatrix<VT> *&res, const CSRMatrix<VT> *arg,
+                      DCTX(ctx)) {
         const size_t numRows = arg->getNumRows();
         const size_t numCols = arg->getNumCols();
-        
-        if(res == nullptr)
-            res = DataObjectFactory::create<CSRMatrix<VT>>(numCols, numRows, arg->getNumNonZeros(), false);
-        
-        const VT * valuesArg = arg->getValues();
-        const size_t * colIdxsArg = arg->getColIdxs();
-        const size_t * rowOffsetsArg = arg->getRowOffsets();
-        
-        VT * valuesRes = res->getValues();
-        VT * const valuesResInit = valuesRes;
-        size_t * colIdxsRes = res->getColIdxs();
-        size_t * rowOffsetsRes = res->getRowOffsets();
-        
-        auto* curRowOffsets = new size_t[numRows + 1];
+
+        if (res == nullptr)
+            res = DataObjectFactory::create<CSRMatrix<VT>>(
+                numCols, numRows, arg->getNumNonZeros(), false);
+
+        const VT *valuesArg = arg->getValues();
+        const size_t *colIdxsArg = arg->getColIdxs();
+        const size_t *rowOffsetsArg = arg->getRowOffsets();
+
+        VT *valuesRes = res->getValues();
+        VT *const valuesResInit = valuesRes;
+        size_t *colIdxsRes = res->getColIdxs();
+        size_t *rowOffsetsRes = res->getRowOffsets();
+
+        auto *curRowOffsets = new size_t[numRows + 1];
         memcpy(curRowOffsets, rowOffsetsArg, (numRows + 1) * sizeof(size_t));
-        
+
         rowOffsetsRes[0] = 0;
-        for(size_t c = 0; c < numCols; c++) {
-            for(size_t r = 0; r < numRows; r++)
-                if(curRowOffsets[r] < rowOffsetsArg[r + 1] && colIdxsArg[curRowOffsets[r]] == c) {
+        for (size_t c = 0; c < numCols; c++) {
+            for (size_t r = 0; r < numRows; r++)
+                if (curRowOffsets[r] < rowOffsetsArg[r + 1] &&
+                    colIdxsArg[curRowOffsets[r]] == c) {
                     *valuesRes++ = valuesArg[curRowOffsets[r]];
                     *colIdxsRes++ = r;
                     curRowOffsets[r]++;
                 }
             rowOffsetsRes[c + 1] = valuesRes - valuesResInit;
         }
-        
+
         delete[] curRowOffsets;
     }
 };

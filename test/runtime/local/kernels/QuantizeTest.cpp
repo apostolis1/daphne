@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-#include <runtime/local/kernels/Quantize.h>
 #include <runtime/local/datagen/GenGivenVals.h>
+#include <runtime/local/kernels/Quantize.h>
 
-#include <tags.h>
 #include <catch.hpp>
-#include <string>
-#include <vector>
 #include <cstdint>
+#include <string>
+#include <tags.h>
+#include <vector>
 
 TEST_CASE("Quantization", TAG_KERNELS) {
 
-    auto f0 = genGivenVals<DenseMatrix<float>>(2, {
-        0, 1.0,
-	0.5, 1.1});
+    auto f0 = genGivenVals<DenseMatrix<float>>(2, {0, 1.0, 0.5, 1.1});
 
-    DenseMatrix<uint8_t>* res = nullptr;
+    DenseMatrix<uint8_t> *res = nullptr;
 
     quantize(res, f0, 0, 1, nullptr);
 
     CHECK(res->getNumRows() == 2);
     CHECK(res->getNumCols() == 2);
 
-    CHECK(res->get(0,0) == 0);
-    CHECK(res->get(0,1) == 255);
-    CHECK(res->get(1,0) == 128);
-    CHECK(res->get(1,1) == 255);
+    CHECK(res->get(0, 0) == 0);
+    CHECK(res->get(0, 1) == 255);
+    CHECK(res->get(1, 0) == 128);
+    CHECK(res->get(1, 1) == 255);
 }

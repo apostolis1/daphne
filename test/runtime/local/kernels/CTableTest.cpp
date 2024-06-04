@@ -15,27 +15,28 @@
  */
 
 #include <runtime/local/datagen/GenGivenVals.h>
-#include <runtime/local/datastructures/DenseMatrix.h>
 #include <runtime/local/datastructures/CSRMatrix.h>
+#include <runtime/local/datastructures/DenseMatrix.h>
 #include <runtime/local/kernels/CTable.h>
 #include <runtime/local/kernels/CheckEq.h>
 
-#include <tags.h>
 #include <catch.hpp>
-#include <vector>
 #include <cstdint>
+#include <tags.h>
+#include <vector>
 
-TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix), (int64_t, int32_t, double)) {
+TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix),
+                           (int64_t, int32_t, double)) {
     using DTRes = TestType;
     using VT = typename DTRes::VT;
 
-    DenseMatrix<int64_t> * ys = nullptr;
-    DenseMatrix<int64_t> * xs = nullptr;
+    DenseMatrix<int64_t> *ys = nullptr;
+    DenseMatrix<int64_t> *xs = nullptr;
     VT weight;
     int64_t resNumRows;
     int64_t resNumCols;
-    DTRes * exp = nullptr;
-    
+    DTRes *exp = nullptr;
+
     SECTION("example 1") {
         ys = genGivenVals<DenseMatrix<int64_t>>(1, {0});
         xs = genGivenVals<DenseMatrix<int64_t>>(1, {0});
@@ -52,14 +53,8 @@ TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix), (int
         resNumRows = -1;
         resNumCols = -1;
 
-        exp = genGivenVals<DTRes>(6, {
-            0, 0, 0, 0,
-            0, 0, 3, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 6,
-            0, 3, 0, 0
-        });
+        exp = genGivenVals<DTRes>(6, {0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 6, 0, 3, 0, 0});
     }
     SECTION("example 2: crop #rows") {
         ys = genGivenVals<DenseMatrix<int64_t>>(4, {1, 4, 5, 4});
@@ -69,11 +64,23 @@ TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix), (int
         resNumCols = -1;
 
         exp = genGivenVals<DTRes>(4, {
-            0, 0, 0, 0,
-            0, 0, 3, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        });
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         3,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                     });
     }
     SECTION("example 2: crop #cols") {
         ys = genGivenVals<DenseMatrix<int64_t>>(4, {1, 4, 5, 4});
@@ -83,13 +90,25 @@ TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix), (int
         resNumCols = 3;
 
         exp = genGivenVals<DTRes>(6, {
-            0, 0, 0,
-            0, 0, 3,
-            0, 0, 0,
-            0, 0, 0,
-            0, 0, 0,
-            0, 3, 0,
-        });
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         3,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         0,
+                                         3,
+                                         0,
+                                     });
     }
     SECTION("example 2: crop both") {
         ys = genGivenVals<DenseMatrix<int64_t>>(4, {1, 4, 5, 4});
@@ -98,28 +117,21 @@ TEMPLATE_PRODUCT_TEST_CASE("CTable", TAG_KERNELS, (DenseMatrix, CSRMatrix), (int
         resNumRows = 4;
         resNumCols = 3;
 
-        exp = genGivenVals<DTRes>(4, {
-            0, 0, 0,
-            0, 0, 3,
-            0, 0, 0,
-            0, 0, 0
-        });
+        exp = genGivenVals<DTRes>(4, {0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0});
     }
     SECTION("example 3: more items than cells") {
-        ys = genGivenVals<DenseMatrix<int64_t>>(12, {0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2});
-        xs = genGivenVals<DenseMatrix<int64_t>>(12, {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1});
+        ys = genGivenVals<DenseMatrix<int64_t>>(
+            12, {0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2});
+        xs = genGivenVals<DenseMatrix<int64_t>>(
+            12, {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1});
         weight = 3;
         resNumRows = -1;
         resNumCols = -1;
 
-        exp = genGivenVals<DTRes>(3, {
-            6, 6,
-            6, 6,
-            6, 6
-        });
+        exp = genGivenVals<DTRes>(3, {6, 6, 6, 6, 6, 6});
     }
-    
-    DTRes * res = nullptr;
+
+    DTRes *res = nullptr;
     ctable(res, ys, xs, weight, resNumRows, resNumCols, nullptr);
     CHECK(*res == *exp);
 

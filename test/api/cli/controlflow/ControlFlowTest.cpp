@@ -25,13 +25,13 @@
 
 const std::string dirPath = "test/api/cli/controlflow/";
 
-#define MAKE_TEST_CASE(name, count) \
-    TEST_CASE(name, TAG_CONTROLFLOW) { \
-        for(unsigned i = 1; i <= count; i++) { \
-            DYNAMIC_SECTION(name "_" << i << ".daphne") { \
-                compareDaphneToRefSimple(dirPath, name, i); \
-            } \
-        } \
+#define MAKE_TEST_CASE(name, count)                                            \
+    TEST_CASE(name, TAG_CONTROLFLOW) {                                         \
+        for (unsigned i = 1; i <= count; i++) {                                \
+            DYNAMIC_SECTION(name "_" << i << ".daphne") {                      \
+                compareDaphneToRefSimple(dirPath, name, i);                    \
+            }                                                                  \
+        }                                                                      \
     }
 
 MAKE_TEST_CASE("if", 8)

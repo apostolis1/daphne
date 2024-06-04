@@ -26,18 +26,16 @@
 // Struct for partial template specialization
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-struct DiagVector {
-    static void apply(DTRes *& res, const DTArg * arg, DCTX(ctx)) = delete;
+template <class DTRes, class DTArg> struct DiagVector {
+    static void apply(DTRes *&res, const DTArg *arg, DCTX(ctx)) = delete;
 };
-
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-void diagVector(DTRes *& res, const DTArg * arg, DCTX(ctx)) {
+template <class DTRes, class DTArg>
+void diagVector(DTRes *&res, const DTArg *arg, DCTX(ctx)) {
     DiagVector<DTRes, DTArg>::apply(res, arg, ctx);
 }
 
@@ -49,9 +47,9 @@ void diagVector(DTRes *& res, const DTArg * arg, DCTX(ctx)) {
 // DenseMatrix <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct DiagVector<DenseMatrix<VT>, DenseMatrix<VT>> {
-    static void apply(DenseMatrix<VT> *& res, const DenseMatrix<VT> * arg, DCTX(ctx)) {
+template <typename VT> struct DiagVector<DenseMatrix<VT>, DenseMatrix<VT>> {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<VT> *arg,
+                      DCTX(ctx)) {
         //------handling corner cases -------
         if (!arg) {
             throw std::runtime_error("arg must not be nullptr");
@@ -64,26 +62,25 @@ struct DiagVector<DenseMatrix<VT>, DenseMatrix<VT>> {
             throw std::runtime_error("arg matrix cannot be empty");
         }
 
-        if(res==nullptr){
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, 1,  false);
+        if (res == nullptr) {
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, 1, false);
         }
-        const VT * allValues = arg->getValues();
-        VT * allUpdatedValues = res->getValues();
-        const size_t rowSize=arg->getRowSkip();
-        for(size_t r = 0; r < numRows; r++){
-            allUpdatedValues[r]=allValues[r+(r*rowSize)];
+        const VT *allValues = arg->getValues();
+        VT *allUpdatedValues = res->getValues();
+        const size_t rowSize = arg->getRowSkip();
+        for (size_t r = 0; r < numRows; r++) {
+            allUpdatedValues[r] = allValues[r + (r * rowSize)];
         }
     }
 };
-
 
 // ----------------------------------------------------------------------------
 // DenseMatrix <- CSRMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct DiagVector<DenseMatrix<VT>, CSRMatrix<VT>> {
-    static void apply(DenseMatrix<VT> *& res, const CSRMatrix<VT> * arg, DCTX(ctx)) {
+template <typename VT> struct DiagVector<DenseMatrix<VT>, CSRMatrix<VT>> {
+    static void apply(DenseMatrix<VT> *&res, const CSRMatrix<VT> *arg,
+                      DCTX(ctx)) {
         //-------handling corner cases ---------
         if (arg == nullptr) {
             throw std::runtime_error("arg must not be nullptr");
@@ -95,28 +92,28 @@ struct DiagVector<DenseMatrix<VT>, CSRMatrix<VT>> {
         if (numRows == 0) {
             throw std::runtime_error("arg matrix cannot be empty");
         }
-        if(res==nullptr){ 
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, 1,  false);
+        if (res == nullptr) {
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, 1, false);
         }
-        const VT *allValues= arg->getValues();
+        const VT *allValues = arg->getValues();
         const size_t *rowOffsets = arg->getRowOffsets();
-        const size_t *colIndxs= arg->getColIdxs();
-        VT * resValues = res->getValues();
+        const size_t *colIndxs = arg->getColIdxs();
+        VT *resValues = res->getValues();
         size_t startRowOffset;
         size_t endRowOffset;
         VT targetValue;
-        for (size_t i =0 ; i< numRows;++i){
+        for (size_t i = 0; i < numRows; ++i) {
             startRowOffset = rowOffsets[i];
-            endRowOffset = rowOffsets[i+1];
+            endRowOffset = rowOffsets[i + 1];
             targetValue = 0;
-            //TODO perf binary search in row range for i
-            for( size_t j = startRowOffset; j<endRowOffset; ++j ){
-                if( colIndxs[j]==i) {
-                    targetValue=allValues[j];
+            // TODO perf binary search in row range for i
+            for (size_t j = startRowOffset; j < endRowOffset; ++j) {
+                if (colIndxs[j] == i) {
+                    targetValue = allValues[j];
                     break;
                 }
             }
-            resValues[i]=targetValue;
+            resValues[i] = targetValue;
         }
     }
 };

@@ -19,10 +19,10 @@
 #include <mlir/IR/Location.h>
 #include <mlir/IR/Operation.h>
 
-#include <string>
-#include <unordered_map>
 #include <atomic>
 #include <mutex>
+#include <string>
+#include <unordered_map>
 
 /**
  * Data-object keeping source file location information for a specific kernel
@@ -52,7 +52,7 @@ struct KernelDispatchMapping {
     mlir::FileLineColLoc currentLoc{};
 
   public:
-    static KernelDispatchMapping& instance();
+    static KernelDispatchMapping &instance();
 
     /**
      * Used to register kernel call during source code lowering.
@@ -60,6 +60,6 @@ struct KernelDispatchMapping {
      * \param op The mlir::Operation being lowered to dispatch a kernel call.
      */
     int registerKernel(std::string name, mlir::Operation *op);
-    // 
+    //
     KDMInfo getKernelDispatchInfo(int kId);
 };

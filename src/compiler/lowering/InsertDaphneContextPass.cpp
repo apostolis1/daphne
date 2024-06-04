@@ -33,18 +33,18 @@ using namespace mlir;
 // extensions in several directions, e.g.:
 // - inserting the context into blocks (e.g. parfor loop bodies)
 // - passing the context as an argument to a function
-struct InsertDaphneContextPass : public PassWrapper<InsertDaphneContextPass, OperationPass<func::FuncOp>>
-{
-    const DaphneUserConfig& user_config;
-    explicit InsertDaphneContextPass(const DaphneUserConfig& cfg) : user_config(cfg) {}
+struct InsertDaphneContextPass
+    : public PassWrapper<InsertDaphneContextPass, OperationPass<func::FuncOp>> {
+    const DaphneUserConfig &user_config;
+    explicit InsertDaphneContextPass(const DaphneUserConfig &cfg)
+        : user_config(cfg) {}
     void runOnOperation() final;
 };
 
-void InsertDaphneContextPass::runOnOperation()
-{
+void InsertDaphneContextPass::runOnOperation() {
     func::FuncOp f = getOperation();
-    Block & b = f.getBody().front();
-    
+    Block &b = f.getBody().front();
+
     OpBuilder builder(&b, b.begin());
     Location loc = f.getLoc();
 
@@ -57,27 +57,26 @@ void InsertDaphneContextPass::runOnOperation()
             loc,
             reinterpret_cast<uint64_t>(&KernelDispatchMapping::instance())));
 #ifdef USE_CUDA
-    if(user_config.use_cuda) {
+    if (user_config.use_cuda) {
         builder.create<daphne::CreateCUDAContextOp>(loc);
     }
 #endif
-    if (user_config.use_distributed){
+    if (user_config.use_distributed) {
         builder.create<daphne::CreateDistributedContextOp>(loc);
     }
 #ifdef USE_FPGAOPENCL
-    if(user_config.use_fpgaopencl) {
+    if (user_config.use_fpgaopencl) {
         builder.create<daphne::CreateFPGAContextOp>(loc);
     }
 #endif
 
- 
     // Insert a DestroyDaphneContextOp as the last operation in the block, but
     // before the block's terminator.
     builder.setInsertionPoint(b.getTerminator());
     builder.create<daphne::DestroyDaphneContextOp>(loc);
 }
 
-std::unique_ptr<Pass> daphne::createInsertDaphneContextPass(const DaphneUserConfig& cfg)
-{
+std::unique_ptr<Pass>
+daphne::createInsertDaphneContextPass(const DaphneUserConfig &cfg) {
     return std::make_unique<InsertDaphneContextPass>(cfg);
 }

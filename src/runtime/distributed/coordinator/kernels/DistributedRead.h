@@ -17,27 +17,23 @@
 #ifndef SRC_RUNTIME_DISTRIBUTED_COORDINATOR_KERNELS_DISTRIBUTEDREAD_H
 #define SRC_RUNTIME_DISTRIBUTED_COORDINATOR_KERNELS_DISTRIBUTEDREAD_H
 
-#include <runtime/local/context/DaphneContext.h>
-#include <runtime/local/datastructures/DataObjectFactory.h>
-#include <runtime/local/io/ReadCsv.h>
-#include <runtime/local/io/File.h>
-#include <parser/metadata/MetaDataParser.h>
 #include <cassert>
 #include <cstddef>
-
-
+#include <parser/metadata/MetaDataParser.h>
+#include <runtime/local/context/DaphneContext.h>
+#include <runtime/local/datastructures/DataObjectFactory.h>
+#include <runtime/local/io/File.h>
+#include <runtime/local/io/ReadCsv.h>
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DT>
-void distributedRead(Handle<DT> *&res, const char * filename, DCTX(ctx))
-{
+template <class DT>
+void distributedRead(Handle<DT> *&res, const char *filename, DCTX(ctx)) {
     FileMetaData fmd = MetaDataParser::readMetaData(filename);
 
     readCsv(res, filename, fmd.numRows, fmd.numCols, ',');
 }
 
-
-#endif //SRC_RUNTIME_DISTRIBUTED_COORDINATOR_KERNELS_DISTRIBUTEDREAD_H
+#endif // SRC_RUNTIME_DISTRIBUTED_COORDINATOR_KERNELS_DISTRIBUTEDREAD_H

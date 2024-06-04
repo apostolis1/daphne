@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <runtime/local/context/DaphneContext.h>
 #include <cstddef>
 #include <cstdio>
+#include <runtime/local/context/DaphneContext.h>
 #include <runtime/local/datastructures/CSRMatrix.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
 #include <string>
@@ -43,7 +43,7 @@ template <class DTArg> bool isSymmetric(const DTArg *arg, DCTX(ctx)) {
  * @brief Checks for symmetrie of a `DenseMatrix`.
  *
  * Checks for symmetrie in a DenseMatrix. Returning early if a check failes, or
- * the matrix is not square. Singular matrixes are considered square. 
+ * the matrix is not square. Singular matrixes are considered square.
  */
 
 template <typename VT> struct IsSymmetric<DenseMatrix<VT>> {
@@ -91,18 +91,20 @@ template <typename VT> struct IsSymmetric<CSRMatrix<VT>> {
             return true;
         }
 
-        std::vector<size_t> positions(numRows, -1); // indexes of the column index array.
+        std::vector<size_t> positions(numRows,
+                                      -1); // indexes of the column index array.
 
         for (size_t rowIdx = 0; rowIdx < numRows; rowIdx++) {
 
-            const VT* rowA = arg->getValues(rowIdx);
-            const size_t* colIdxsA = arg->getColIdxs(rowIdx);
+            const VT *rowA = arg->getValues(rowIdx);
+            const size_t *colIdxsA = arg->getColIdxs(rowIdx);
             const size_t numNonZerosA = arg->getNumNonZeros(rowIdx);
 
-            for (size_t idx = 0;  idx < numNonZerosA; idx++) {
+            for (size_t idx = 0; idx < numNonZerosA; idx++) {
                 const size_t colIdxA = colIdxsA[idx];
 
-                if (colIdxA <= rowIdx) { // Exit early if diagonal element or before.
+                if (colIdxA <=
+                    rowIdx) { // Exit early if diagonal element or before.
                     continue;
                 }
 
@@ -110,29 +112,32 @@ template <typename VT> struct IsSymmetric<CSRMatrix<VT>> {
                 VT valA = rowA[idx];
 
                 // B references the transposed element to compare for symmetry.
-                const VT* rowB = arg->getValues(colIdxA);
-                const size_t* colIdxsB = arg->getColIdxs(colIdxA);
+                const VT *rowB = arg->getValues(colIdxA);
+                const size_t *colIdxsB = arg->getColIdxs(colIdxA);
                 const size_t numNonZerosB = arg->getNumNonZeros(colIdxA);
 
                 positions[colIdxA]++; // colIdxA is rowIdxB
                 const size_t posB = positions[colIdxA];
 
-                if (numNonZerosB <= posB) { // Does the next expected element exist?
+                if (numNonZerosB <=
+                    posB) { // Does the next expected element exist?
                     return false;
                 }
 
                 const size_t colIdxB = colIdxsB[posB];
                 VT valB = rowB[posB];
 
-
-                if( colIdxB != rowIdx || valA != valB) { // Indexes or values differ, not sym.
+                if (colIdxB != rowIdx ||
+                    valA != valB) { // Indexes or values differ, not sym.
                     return false;
                 }
             }
 
             const size_t rowLastPos = positions[rowIdx];
 
-            if (rowLastPos == static_cast<size_t>(-1) && numNonZerosA != 0) { // Not all elements of this row were iterated over, not sym!
+            if (rowLastPos == static_cast<size_t>(-1) &&
+                numNonZerosA != 0) { // Not all elements of this row were
+                                     // iterated over, not sym!
                 return false;
             }
         }

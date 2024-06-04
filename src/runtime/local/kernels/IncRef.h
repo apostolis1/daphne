@@ -24,8 +24,6 @@
 // Convenience function
 // ****************************************************************************
 
-void incRef(const Structure * arg, DCTX(ctx)) {
-    arg->increaseRefCounter();
-}
+void incRef(const Structure *arg, DCTX(ctx)) { arg->increaseRefCounter(); }
 
-#endif //SRC_RUNTIME_LOCAL_KERNELS_INCREF_H
+#endif // SRC_RUNTIME_LOCAL_KERNELS_INCREF_H

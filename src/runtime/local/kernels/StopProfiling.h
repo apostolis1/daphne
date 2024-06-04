@@ -24,6 +24,4 @@
 // Convenience function
 // ****************************************************************************
 
-void stopProfiling(DCTX(ctx)) {
-    PAPI_hl_region_end("fixme");
-}
+void stopProfiling(DCTX(ctx)) { PAPI_hl_region_end("fixme"); }

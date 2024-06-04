@@ -20,8 +20,8 @@
 #include <runtime/local/context/DaphneContext.h>
 #include <runtime/local/datastructures/DataObjectFactory.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
-#include <runtime/local/kernels/UnaryOpCode.h>
 #include <runtime/local/kernels/EwUnarySca.h>
+#include <runtime/local/kernels/UnaryOpCode.h>
 
 #include <cstddef>
 
@@ -29,17 +29,17 @@
 // Struct for partial template specialization
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-struct EwUnaryMat {
-    static void apply(UnaryOpCode opCode, DTRes *& res, const DTArg * arg, DCTX(ctx)) = delete;
+template <class DTRes, class DTArg> struct EwUnaryMat {
+    static void apply(UnaryOpCode opCode, DTRes *&res, const DTArg *arg,
+                      DCTX(ctx)) = delete;
 };
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DTRes, class DTArg>
-void ewUnaryMat(UnaryOpCode opCode, DTRes *& res, const DTArg * arg, DCTX(ctx)) {
+template <class DTRes, class DTArg>
+void ewUnaryMat(UnaryOpCode opCode, DTRes *&res, const DTArg *arg, DCTX(ctx)) {
     EwUnaryMat<DTRes, DTArg>::apply(opCode, res, arg, ctx);
 }
 
@@ -51,22 +51,23 @@ void ewUnaryMat(UnaryOpCode opCode, DTRes *& res, const DTArg * arg, DCTX(ctx)) 
 // DenseMatrix <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct EwUnaryMat<DenseMatrix<VT>, DenseMatrix<VT>> {
-    static void apply(UnaryOpCode opCode, DenseMatrix<VT> *& res, const DenseMatrix<VT> * arg, DCTX(ctx)) {
+template <typename VT> struct EwUnaryMat<DenseMatrix<VT>, DenseMatrix<VT>> {
+    static void apply(UnaryOpCode opCode, DenseMatrix<VT> *&res,
+                      const DenseMatrix<VT> *arg, DCTX(ctx)) {
         const size_t numRows = arg->getNumRows();
         const size_t numCols = arg->getNumCols();
-        
-        if(res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols, false);
-        
-        const VT * valuesArg = arg->getValues();
-        VT * valuesRes = res->getValues();
-        
+
+        if (res == nullptr)
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols,
+                                                             false);
+
+        const VT *valuesArg = arg->getValues();
+        VT *valuesRes = res->getValues();
+
         EwUnaryScaFuncPtr<VT, VT> func = getEwUnaryScaFuncPtr<VT, VT>(opCode);
-        
-        for(size_t r = 0; r < numRows; r++) {
-            for(size_t c = 0; c < numCols; c++)
+
+        for (size_t r = 0; r < numRows; r++) {
+            for (size_t c = 0; c < numCols; c++)
                 valuesRes[c] = func(valuesArg[c], ctx);
             valuesArg += arg->getRowSkip();
             valuesRes += res->getRowSkip();
@@ -74,4 +75,4 @@ struct EwUnaryMat<DenseMatrix<VT>, DenseMatrix<VT>> {
     }
 };
 
-#endif //SRC_RUNTIME_LOCAL_KERNELS_EWUNARYMAT_H
+#endif // SRC_RUNTIME_LOCAL_KERNELS_EWUNARYMAT_H

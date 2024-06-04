@@ -17,6 +17,7 @@
 #ifndef SRC_RUNTIME_LOCAL_KERNELS_WRITE_H
 #define SRC_RUNTIME_LOCAL_KERNELS_WRITE_H
 
+#include <parser/metadata/MetaDataParser.h>
 #include <runtime/local/context/DaphneContext.h>
 #include <runtime/local/datastructures/DataObjectFactory.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
@@ -24,24 +25,22 @@
 #include <runtime/local/io/FileMetaData.h>
 #include <runtime/local/io/WriteCsv.h>
 #include <runtime/local/io/WriteDaphne.h>
-#include <parser/metadata/MetaDataParser.h>
-
 
 // ****************************************************************************
 // Struct for partial template specialization
 // ****************************************************************************
 
-template<class DTArg>
-struct Write {
-    static void apply(const DTArg * arg, const char * filename, DCTX(ctx)) = delete;
+template <class DTArg> struct Write {
+    static void apply(const DTArg *arg, const char *filename,
+                      DCTX(ctx)) = delete;
 };
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template<class DTArg>
-void write(const DTArg * arg, const char * filename, DCTX(ctx)) {
+template <class DTArg>
+void write(const DTArg *arg, const char *filename, DCTX(ctx)) {
     Write<DTArg>::apply(arg, filename, ctx);
 }
 
@@ -53,25 +52,28 @@ void write(const DTArg * arg, const char * filename, DCTX(ctx)) {
 // DenseMatrix
 // ----------------------------------------------------------------------------
 
-template<typename VT>
-struct Write<DenseMatrix<VT>> {
-    static void apply(const DenseMatrix<VT> * arg, const char * filename, DCTX(ctx)) {
-	std::string fn(filename);
-	auto pos = fn.find_last_of('.');
-	std::string ext(fn.substr(pos+1)) ;
-	if (ext == "csv") {
-		File * file = openFileForWrite(filename);
-		FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), true, ValueTypeUtils::codeFor<VT>);
-		MetaDataParser::writeMetaData(filename, metaData);
-		writeCsv(arg, file);
-		closeFile(file);
-	} else if (ext == "dbdf") {
-        FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), true, ValueTypeUtils::codeFor<VT>);
-        MetaDataParser::writeMetaData(filename, metaData);
-		writeDaphne(arg, filename);
-    } else {
-      throw std::runtime_error( "[Write.h] - unsupported file extension in write kernel.");
-    }
+template <typename VT> struct Write<DenseMatrix<VT>> {
+    static void apply(const DenseMatrix<VT> *arg, const char *filename,
+                      DCTX(ctx)) {
+        std::string fn(filename);
+        auto pos = fn.find_last_of('.');
+        std::string ext(fn.substr(pos + 1));
+        if (ext == "csv") {
+            File *file = openFileForWrite(filename);
+            FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), true,
+                                  ValueTypeUtils::codeFor<VT>);
+            MetaDataParser::writeMetaData(filename, metaData);
+            writeCsv(arg, file);
+            closeFile(file);
+        } else if (ext == "dbdf") {
+            FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), true,
+                                  ValueTypeUtils::codeFor<VT>);
+            MetaDataParser::writeMetaData(filename, metaData);
+            writeDaphne(arg, filename);
+        } else {
+            throw std::runtime_error(
+                "[Write.h] - unsupported file extension in write kernel.");
+        }
     }
 };
 
@@ -79,21 +81,21 @@ struct Write<DenseMatrix<VT>> {
 // Frame
 // ----------------------------------------------------------------------------
 
-template<>
-struct Write<Frame> {
-    static void apply(const Frame * arg, const char * filename, DCTX(ctx)) {
-        File * file = openFileForWrite(filename);
+template <> struct Write<Frame> {
+    static void apply(const Frame *arg, const char *filename, DCTX(ctx)) {
+        File *file = openFileForWrite(filename);
         std::vector<ValueTypeCode> vtcs;
         std::vector<std::string> labels;
-        for(size_t i = 0; i < arg->getNumCols(); i++) {
+        for (size_t i = 0; i < arg->getNumCols(); i++) {
             vtcs.push_back(arg->getSchema()[i]);
             labels.push_back(arg->getLabels()[i]);
         }
-        FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), false, vtcs, labels);
+        FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), false, vtcs,
+                              labels);
         MetaDataParser::writeMetaData(filename, metaData);
         writeCsv(arg, file);
         closeFile(file);
     }
 };
 
-#endif //SRC_RUNTIME_LOCAL_KERNELS_WRITE_H
+#endif // SRC_RUNTIME_LOCAL_KERNELS_WRITE_H

@@ -16,22 +16,22 @@
 
 #pragma once
 
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/ExecutionEngine/ExecutionEngine.h"
-#include <api/cli/DaphneUserConfig.h>
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/PassManager.h"
+#include <api/cli/DaphneUserConfig.h>
 
-class DaphneIrExecutor
-{
-public:
+class DaphneIrExecutor {
+  public:
     DaphneIrExecutor(bool selectMatrixRepresentations, DaphneUserConfig cfg);
 
     bool runPasses(mlir::ModuleOp module);
-    std::unique_ptr<mlir::ExecutionEngine> createExecutionEngine(mlir::ModuleOp module);
+    std::unique_ptr<mlir::ExecutionEngine>
+    createExecutionEngine(mlir::ModuleOp module);
 
-    mlir::MLIRContext *getContext()
-    { return &context_; }
-private:
+    mlir::MLIRContext *getContext() { return &context_; }
+
+  private:
     mlir::MLIRContext context_;
     DaphneUserConfig userConfig_;
     bool selectMatrixRepresentations_;
@@ -40,4 +40,3 @@ private:
 
     void buildCodegenPipeline(mlir::PassManager &);
 };
-

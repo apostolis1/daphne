@@ -24,6 +24,4 @@
 // Convenience function
 // ****************************************************************************
 
-void startProfiling(DCTX(ctx)) {
-    PAPI_hl_region_begin("fixme");
-}
+void startProfiling(DCTX(ctx)) { PAPI_hl_region_begin("fixme"); }
