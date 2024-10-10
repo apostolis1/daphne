@@ -81,12 +81,12 @@ function build_daphne() {
 #GH_USER="corepointer"
 #DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 
-DAPHNE_TARGET=daphne-deps
-BASE_IMAGE=ubuntu:${ubuntuVersion}
-DAPHNE_TAG=$TIMESTAMP_DATE_${ARCH}
-IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
-#bulid deps stage
-build_daphne -deps-lustre
+# DAPHNE_TARGET=daphne-deps
+# BASE_IMAGE=ubuntu:${ubuntuVersion}
+# DAPHNE_TAG=$TIMESTAMP_DATE_${ARCH}
+# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+# #bulid deps stage
+# build_daphne -deps-lustre
 
 ## build ci stage (based on deps stage)
 # DAPHNE_TARGET=github-action
@@ -101,11 +101,11 @@ DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 #------------------------------------------------------------------------------
 # Images for DAPHNE development (BASE)
 #------------------------------------------------------------------------------
-DAPHNE_TARGET=daphne-dev
-BASE_IMAGE=ubuntu:${ubuntuVersion}
-DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
-IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
-build_daphne -dev-lustre
+# DAPHNE_TARGET=daphne-dev
+# BASE_IMAGE=ubuntu:${ubuntuVersion}
+# DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
+# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+# build_daphne -dev-lustre
 
 # $USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG daphneeu/daphne-dev:latest_${ARCH}_BASE
 # ubuntuVersion=20.04
@@ -137,13 +137,14 @@ build_daphne -dev-lustre
 # Images for running DAPHNE
 #------------------------------------------------------------------------------
 # DAPHNE_TARGET=daphne
-# BASE_IMAGE=daphneeu/daphne-deps
+# BASE_IMAGE=apostolis1/daphne-deps-lustre
 # FINAL_BASE_IMAGE=ubuntu:${ubuntuVersion}
 # DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
-# IMAGE_REPO=daphneeu/$DAPHNE_TARGET
-# DAPHNE_BUILD_FLAGS="--mpi"
-# build_daphne
-# $USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG daphneeu/daphne:latest_${ARCH}_BASE
+# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+# # DAPHNE_BUILD_FLAGS="--mpi"
+# DAPHNE_BUILD_FLAGS=
+# build_daphne -lustre
+# $USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG apostolis1/daphne:latest_${ARCH}_BASE
 
 #-----------------------------------------------------------------------------
 # Images for running DAPHNE (CUDA)

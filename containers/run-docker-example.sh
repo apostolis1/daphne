@@ -18,8 +18,8 @@ echo "Use this as an example to start DAPHNE docker containers. Copy and customi
 echo "Add sudo to docker invocation if needed in your setup"
 
 ARCH=X86-64
-DOCKER_IMAGE=daphneeu/daphne-dev
-DOCKER_TAG=latest_${ARCH}_BASE
+DOCKER_IMAGE=apostolis1/daphne-dev-lustre
+DOCKER_TAG=latest
 #DOCKER_TAG=latest_${ARCH}_CUDA
 if [ $(arch) == 'armv64'  ] || [ $(arch) == 'aarch64' ]; then
     DOCKER_TAG=v0.2_ARMV8_BASE_ubuntu20.04
@@ -68,7 +68,8 @@ fi
 $USE_SUDO docker run $DEBUG_FLAGS $DEVICE_FLAGS -it --rm --hostname daphne-container -w $DAPHNE_ROOT_CONTAINER \
     -v "$DAPHNE_ROOT:$DAPHNE_ROOT_CONTAINER" -e GID=$GID -e TERM=screen-256color -e PATH -e LD_LIBRARY_PATH \
     -e USER=$USERNAME -e UID=$UID \
+    -v /lustre:/lustre \
+   --entrypoint /daphne/containers/entrypoint-interactive.sh \
     "$DOCKER_IMAGE:$DOCKER_TAG" $command
 
 # move this up to above the DOCKER_IMAGE line to override the entrypoint:
-#    --entrypoint /daphne/containers/entrypoint-interactive.sh

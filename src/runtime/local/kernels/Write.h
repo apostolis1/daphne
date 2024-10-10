@@ -16,6 +16,7 @@
 
 #ifndef SRC_RUNTIME_LOCAL_KERNELS_WRITE_H
 #define SRC_RUNTIME_LOCAL_KERNELS_WRITE_H
+#include <runtime/local/io/lustre/WriteLustre.h>
 
 #include <parser/metadata/MetaDataParser.h>
 #include <runtime/local/context/DaphneContext.h>
@@ -74,6 +75,9 @@ template <typename VT> struct Write<DenseMatrix<VT>> {
                                   ValueTypeUtils::codeFor<VT>);
             MetaDataParser::writeMetaData(filename, metaData);
             writeDaphne(arg, filename);
+        }
+        else if (ext == "lustre") {
+            writeLustre(arg, filename, ctx);
 #if USE_HDFS
         } else if (ext == "hdfs") {
             HDFSMetaData hdfs = {true, filename};

@@ -22,6 +22,10 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
 
+#include <runtime/local/io/lustre/ReadLustreCsv.h>
+#include <runtime/local/io/lustre/readDaphneLustre.h>
+
+
 #if USE_HDFS
 #include <runtime/local/io/HDFS/ReadDaphneHDFS.h>
 #include <runtime/local/io/HDFS/ReadHDFSCsv.h>
@@ -185,3 +189,32 @@ WorkerImplGRPCSync::WriteHDFS(::grpc::ServerContext *context,
     return ::grpc::Status::OK;
 }
 #endif
+
+
+// Lustre Worker methods
+
+grpc::Status
+WorkerImplGRPCSync::ReadLustre(::grpc::ServerContext *context,
+                             const ::distributed::LustreFile *request,
+                             ::distributed::StoredData *response) {
+    DaphneContext ctx(cfg, KernelDispatchMapping::instance(),
+                      Statistics::instance(), StringRefCounter::instance());
+    // TODO: Check this HDFS Context
+    // createHDFSContext(&ctx);
+    DenseMatrix<double> *res = DataObjectFactory::create<DenseMatrix<double>>(
+        request->num_rows(), request->num_cols(), false);
+    if (request->filename().find("csv") != std::string::npos)
+        readLustreCsv(res, request->filename().c_str(), request->num_rows(),
+                    request->num_cols(), ',', &ctx, request->start_row());
+    else if (request->filename().find("dbdf") != std::string::npos)
+        ;
+        // readDaphneLustre(res, request->filename().c_str(), &ctx,
+        //                request->start_row());
+    std::cout << "Finished Request to local Kernel, getting data back";
+    auto storedInfo = WorkerImpl::Store(dynamic_cast<Structure *>(res));
+
+    response->set_identifier(storedInfo.identifier);
+    response->set_num_rows(storedInfo.numRows);
+    response->set_num_cols(storedInfo.numCols);
+    return ::grpc::Status::OK;
+}
