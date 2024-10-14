@@ -76,6 +76,7 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
 
         int charsPerCell = 12;
         size_t lineSize = numCols * charsPerCell + (numCols-1) * sizeof(delim) + sizeof('\n');
+        std::cout << "Linesize for read: " << lineSize << std::endl;
         size_t parsedRows = 0;
         // TODO: check if skiprows affects offset somehow
         // TODO: Testing changes, try to read everything but the first row
@@ -87,6 +88,8 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
 
 
         printf("Trying to read %li rows, starting from row %li \n", numRows, startRow);
+        // TODO: Increate this buffer size, it is small only to cause multiple writes to catch potential errors during testing 
+        // Should be something like char buffer[1UL << 20];
         char buffer[1UL << 7];
         char *cur = nullptr;
         ssize_t n = 0;
@@ -128,7 +131,7 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
                 }
             } while (cur == nullptr);
 
-            // TODO: Check if we need to skip rows for some reason, they do in HDFS
+            // TODO: Check if we need to skip rows for some reason, is it done in  HDFS ?
 
             // Parse row
             printf("Parsing line %li\n", startRow + parsedRows);

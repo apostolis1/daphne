@@ -1,11 +1,12 @@
 #pragma once
 
 #include <stdio.h>
-// #include <lustre/lustreapi.h>
+
 #include <runtime/local/io/lustre/ReadLustreCsv.h>
 #include <runtime/local/io/lustre/readDaphneLustre.h>
 
 #include <runtime/distributed/coordinator/kernels/DistributedRead.h>
+#include <lustre/lustreapi.h>
 
 
 // ****************************************************************************

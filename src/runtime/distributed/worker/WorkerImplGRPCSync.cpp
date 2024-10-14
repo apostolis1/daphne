@@ -22,9 +22,10 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
 
+#include <parser/metadata/MetaDataParser.h>
 #include <runtime/local/io/lustre/ReadLustreCsv.h>
 #include <runtime/local/io/lustre/readDaphneLustre.h>
-
+#include <runtime/local/io/lustre/WriteLustreCsv.h>
 
 #if USE_HDFS
 #include <runtime/local/io/HDFS/ReadDaphneHDFS.h>
@@ -216,5 +217,32 @@ WorkerImplGRPCSync::ReadLustre(::grpc::ServerContext *context,
     response->set_identifier(storedInfo.identifier);
     response->set_num_rows(storedInfo.numRows);
     response->set_num_cols(storedInfo.numCols);
+    return ::grpc::Status::OK;
+}
+
+grpc::Status
+WorkerImplGRPCSync::WriteLustre(::grpc::ServerContext *context,
+                              const ::distributed::LustreWriteInfo *request,
+                              ::distributed::Empty *response) {
+    DaphneContext ctx(cfg, KernelDispatchMapping::instance(),
+                      Statistics::instance(), StringRefCounter::instance());
+    // createHDFSContext(&ctx);
+    StoredInfo si({request->matrix().identifier(), request->matrix().num_rows(),
+                   request->matrix().num_cols()});
+    auto mat = dynamic_cast<DenseMatrix<double> *>(WorkerImpl::Transfer(si));
+    auto filename = (request->filename()).c_str();
+    auto start_row = request->start_row();
+    std::cout << "Should start writing at start row: " << start_row << std::endl;
+    if (request->filename().find("csv") != std::string::npos) {
+        writeLustreCsv(mat, filename, &ctx, start_row);
+        std::cout << "Lustre CSV write\n";
+    }
+    else if (request->filename().find("dbdf") != std::string::npos) {
+        // writeDaphneHDFS(mat, request->dirname().c_str(), &ctx);
+        std::cout << "Lustre Daphne object write\n";
+    }
+    else {
+        std::cout << "Extention not supported for file: " << filename << std::endl;
+    }
     return ::grpc::Status::OK;
 }

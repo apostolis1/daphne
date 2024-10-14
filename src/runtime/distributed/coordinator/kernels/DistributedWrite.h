@@ -25,6 +25,8 @@
 #include <runtime/distributed/worker/WorkerImpl.h>
 #include <runtime/local/datastructures/AllocationDescriptorGRPC.h>
 
+#include <runtime/local/io/lustre/WriteLustreCsv.h>
+
 #ifdef USE_MPI
 #include <runtime/distributed/worker/MPIHelper.h>
 #endif
@@ -174,3 +176,131 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
     }
 };
 #endif
+
+template <class DTArg>
+struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
+    static void apply(const DTArg *mat, const char *filename, DCTX(dctx)) {
+        auto ctx = DistributedContext::get(dctx);
+        auto workers = ctx->getWorkers();
+
+        std::cout << "Grabbed workers" << std::endl;
+
+        if (mat == nullptr) {
+            throw std::runtime_error("matrix argument is null");
+        }
+        
+        std::filesystem::path filePath(filename);
+
+        // Get nested file extension
+        auto extension = filePath.stem().extension().string();
+        std::cout << "Extention: " << extension << std::endl;
+        size_t chunkId = 1;
+        // The coordinator should create the file, so each worker writes to the existing file at the specified offset
+        std::string fn(filename);
+        
+        // TODO Check if path exists
+        // Write file metadata
+        FileMetaData fmd(mat->getNumRows(), mat->getNumCols(), true, ValueTypeUtils::codeFor<double>);
+        auto fmdStr = MetaDataParser::writeMetaDataToString(fmd);
+        if (fmdStr.size() == 0 ) {
+            throw std::runtime_error("Metadata string could not be parsed\n");
+            return ;
+        }
+        auto mdtFn = fn + ".meta";
+
+        // Open metadata file for writing
+        // TODO what if the file already exists
+
+        int stripe_size = 65536;    /* System default is 4M */
+        int stripe_offset = -1;     /* Start at default */
+        int stripe_count = 1;       /* Amount of stripes, eg fragments */
+        int stripe_pattern = 0;     /* only RAID 0 at this time */
+
+        // Delete files if they exist
+        if (std::filesystem::remove(static_cast<const char *>(mdtFn.c_str())))
+            std::cout << "Removed file " << mdtFn << std::endl;
+        if (std::filesystem::remove(filename))
+            std::cout << "Removed file " << filename << std::endl;
+            
+        
+        int fd = llapi_file_open(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY, 0644, stripe_size, -1, -1, 0);
+        if (fd < 0)
+            throw std::runtime_error("Error opening Metadata file");
+
+        // Write metadata
+        
+        dprintf(fd, "%s", fmdStr.c_str());
+        std::cout << "Successfull metadata write \n";
+        if (close(fd) < 0) {
+                fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
+                return ;
+        }
+        // Open .lustre file
+        // If file exists don't pass the O_CREAT flag
+        fd = llapi_file_open(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
+        if (fd < 0)
+            throw std::runtime_error("Error opening Lustre file");
+        close(fd);
+        std::vector<std::thread> threads_vector;
+        for (auto workerAddr : workers) {
+            DataPlacement *dp;
+            if ((dp = mat->getMetaDataObject()->getDataPlacementByLocation(
+                     workerAddr))) {
+                auto data =
+                    dynamic_cast<AllocationDescriptorGRPC &>(*(dp->allocation))
+                        .getDistributedData();
+                if (data.isPlacedAtWorker) {
+                    std::cout << "Data placed at worker\n";
+                    std::cout << "r_start: " << dp->range.get()->r_start << " r_len: " << dp->range.get()->r_len << std::endl;
+                    std::thread t([=, &mat]() {
+                        auto stub = ctx->stubs[workerAddr].get();
+
+                        distributed::LustreWriteInfo fileData;
+                        fileData.mutable_matrix()->set_identifier(
+                            data.identifier);
+                        fileData.mutable_matrix()->set_num_rows(data.numRows);
+                        fileData.mutable_matrix()->set_num_cols(data.numCols);
+                        
+                        fileData.set_filename(filename);
+                        fileData.set_start_row(dp->range.get()->r_start);
+                        grpc::ClientContext grpc_ctx;
+                        distributed::Empty empty;
+
+                        auto status =
+                            stub->WriteLustre(&grpc_ctx, fileData, &empty);
+                        if (!status.ok())
+                            throw std::runtime_error(status.error_message());
+                    });
+                    threads_vector.push_back(move(t));
+                } else {
+                    // TODO: This is executed at the coordinator ? Why ?
+                    std::cout << "Data not placed at worker\n";
+                    auto slicedMat = mat->sliceRow(dp->range.get()->r_start,
+                                                   dp->range.get()->r_start +
+                                                       dp->range.get()->r_len);
+                    if (extension == ".csv") {
+                        writeLustreCsv(mat, filename, dctx);
+                        }
+                    else if (extension == ".dbfs") {
+                        writeLustreCsv(mat, filename, dctx);
+                    }
+                }
+            } else {
+                std::cout << "No dp placement" << std::endl;
+                if (extension == ".csv") {
+                    writeLustreCsv(mat, filename, dctx);
+                    }
+                else if (extension == ".dbfs") {
+                    writeLustreCsv(mat, filename, dctx);
+                }
+                continue;
+            }
+            // TODO we should also store ranges that did not have a
+            // dataplacement associated with them
+        }
+        for (auto &thread : threads_vector)
+            thread.join();
+
+
+    }
+};

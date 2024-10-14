@@ -44,3 +44,9 @@ message LustreFile {
   uint64 num_rows = 3;
   uint64 num_cols = 4;
 }
+
+message LustreWriteInfo {
+  string filename = 1;
+  uint64 start_row = 2;
+  StoredData matrix = 3;
+}

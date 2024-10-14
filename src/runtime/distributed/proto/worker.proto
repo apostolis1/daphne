@@ -26,6 +26,7 @@ service Worker {
   rpc WriteHDFS (HDFSWriteInfo) returns (Empty) {}
   rpc ReadHDFS (HDFSFile) returns (StoredData) {}
   rpc ReadLustre (LustreFile) returns (StoredData) {}
+  rpc WriteLustre (LustreWriteInfo) returns (Empty) {}
   rpc Store (stream Data) returns (StoredData) {}
   rpc Compute (Task) returns (ComputeResult) {}
   rpc Transfer (StoredData) returns (Data) {}
