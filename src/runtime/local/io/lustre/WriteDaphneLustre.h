@@ -1,5 +1,7 @@
 #pragma once
 
+#include <runtime/local/io/DaphneSerializer.h>
+
 template <class DTArg>
 struct WriteDaphneLustre
 {
@@ -28,7 +30,7 @@ void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_
 
 template <typename VT>
 struct WriteDaphneLustre<DenseMatrix<VT>> {
-    static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
+    static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) {
         std::cout << "Template for Densematrix" << std::endl;
 
         if (filename == nullptr)
@@ -44,7 +46,8 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         // Metadata file already exists if called by distributed runtime, because the coordinator is responsible for creating it
         // Similar for the actual lustre data file
         // We might want to change that, depending on what the intented behavior is when writing a file that already exists (we delete it / throw an error ?)
-        if (!std::filesystem::exists(metadatafilePath)) {        
+        if (!std::filesystem::exists(metadatafilePath)) {   
+            std::cout << "Writing metadata from local kernel" << std::endl;     
             // Write file metadata
             FileMetaData fmd(arg->getNumRows(), arg->getNumCols(), true, ValueTypeUtils::codeFor<VT>);
             auto fmdStr = MetaDataParser::writeMetaDataToString(fmd);
@@ -78,6 +81,7 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         std::filesystem::path filePath(filename);
 
         if (!std::filesystem::exists(filePath)) {
+            std::cout << "Creating .lustre file from local kernel" << std::endl;     
 
             int stripe_size = 65536;    /* System default is 4M */
             int stripe_offset = -1;     /* Start at default */
@@ -100,8 +104,27 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         const VT * valuesArg = arg->getValues();
         const size_t rowSkip = arg->getRowSkip();
         const size_t argNumCols = arg->getNumCols();
+        
 
-
+        size_t offset;
+        size_t length;
+        length = DaphneSerializer<DenseMatrix<VT>>::length(arg);
+        if (writeHeader) {
+            offset = 0;
+            std::vector<char> buffer(length);
+            DaphneSerializer<DenseMatrix<VT>>::serialize(arg, buffer);
+            size_t res = pwrite(fd, buffer.data(), length, offset);
+            if (close(fd) < 0) {
+                fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
+                return ;
+            }
+        }
+        else {
+            auto headerSize = DaphneSerializer<DenseMatrix<VT>>::headerSize(arg);
+            offset = headerSize;
+            offset += start_row * argNumCols * sizeof(VT);
+        }
+        
     }
     
 };
