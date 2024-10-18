@@ -242,7 +242,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         if (fd < 0)
             throw std::runtime_error("Error opening Lustre file");
         // In case of daphne object file the coordinator must  
-        if (extension == ".dbfs") {
+        if (extension == ".dbdf") {
             size_t length;
             // length = DaphneSerializer<DenseMatrix<DTArg>>::length(mat);
             // std::vector<char> buffer(length);
@@ -291,7 +291,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                     if (extension == ".csv") {
                         writeLustreCsv(mat, filename, dctx);
                         }
-                    else if (extension == ".dbfs") {
+                    else if (extension == ".dbdf") {
                         writeDaphneLustre(mat, filename, dctx);
                     }
                 }
@@ -301,7 +301,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                 // if (extension == ".csv") {
                 //     writeLustreCsv(mat, filename, dctx);
                 //     }
-                // else if (extension == ".dbfs") {
+                // else if (extension == ".dbdf") {
                 //     writeLustreCsv(mat, filename, dctx);
                 // }
                 continue;
