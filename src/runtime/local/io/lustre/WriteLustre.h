@@ -3,6 +3,7 @@
 #include <stdio.h>
 // #include <lustre/lustreapi.h>
 #include <runtime/local/io/lustre/WriteLustreCsv.h>
+#include <runtime/local/io/lustre/WriteDaphneLustre.h>
 
 #include <runtime/distributed/coordinator/kernels/DistributedWrite.h>
 
@@ -24,7 +25,7 @@ struct WriteLustre
             if (extension == ".csv") {              
                 writeLustreCsv(arg, filename, dctx);
             } else if (extension == ".dbdf") {
-                // writeDaphneHDFS(arg, hdfsfilename.c_str(), dctx);
+                writeDaphneLustre(arg, filename, dctx);
             }
         }
     }

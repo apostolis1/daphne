@@ -3,10 +3,10 @@
 #include <stdio.h>
 
 #include <runtime/local/io/lustre/ReadLustreCsv.h>
-#include <runtime/local/io/lustre/readDaphneLustre.h>
+#include <runtime/local/io/lustre/ReadDaphneLustre.h>
 
 #include <runtime/distributed/coordinator/kernels/DistributedRead.h>
-#include <lustre/lustreapi.h>
+#include "LustreUtils.h"
 
 
 // ****************************************************************************
@@ -38,8 +38,7 @@ struct ReadLustre
             if (extension == ".csv") {
                 readLustreCsv(res, filename, fmd.numRows, fmd.numCols, ',', dctx);
             } else if (extension == ".dbdf") {
-                // readDaphneLustre(res, filename, dctx);
-                ;
+                readDaphneLustre(res, filename, dctx);
             }
         }
     }

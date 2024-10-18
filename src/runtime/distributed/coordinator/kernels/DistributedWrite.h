@@ -26,6 +26,8 @@
 #include <runtime/local/datastructures/AllocationDescriptorGRPC.h>
 
 #include <runtime/local/io/lustre/WriteLustreCsv.h>
+#include <runtime/local/io/lustre/WriteDaphneLustre.h>
+#include <runtime/local/io/DaphneSerializer.h>
 
 #ifdef USE_MPI
 #include <runtime/distributed/worker/MPIHelper.h>
@@ -175,8 +177,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
             thread.join();
     }
 };
-#endif
-
+#else
 template <class DTArg>
 struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
     static void apply(const DTArg *mat, const char *filename, DCTX(dctx)) {
@@ -194,7 +195,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         // Get nested file extension
         auto extension = filePath.stem().extension().string();
         std::cout << "Extention: " << extension << std::endl;
-        size_t chunkId = 1;
         // The coordinator should create the file, so each worker writes to the existing file at the specified offset
         std::string fn(filename);
         
@@ -216,7 +216,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         int stripe_count = 1;       /* Amount of stripes, eg fragments */
         int stripe_pattern = 0;     /* only RAID 0 at this time */
 
-        // Delete files if they exist
+        // Delete files if they exist TODO: How do we handle the case when file already exists?
         if (std::filesystem::remove(static_cast<const char *>(mdtFn.c_str())))
             std::cout << "Removed file " << mdtFn << std::endl;
         if (std::filesystem::remove(filename))
@@ -235,11 +235,20 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                 fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
                 return ;
         }
-        // Open .lustre file
-        // If file exists don't pass the O_CREAT flag
+        // Create .lustre file
+        // If this is a daphne object file, the coordinator should write the header because it has the overview of the whole matrix,
+        // thus it can create the header. The workers should write the data only
         fd = llapi_file_open(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
         if (fd < 0)
             throw std::runtime_error("Error opening Lustre file");
+        // In case of daphne object file the coordinator must  
+        if (extension == ".dbfs") {
+            size_t length;
+            // length = DaphneSerializer<DenseMatrix<DTArg>>::length(mat);
+            // std::vector<char> buffer(length);
+            // DaphneSerializer<DenseMatrix<DTArg>>::serializeHeader(mat, buffer);
+
+        }
         close(fd);
         std::vector<std::thread> threads_vector;
         for (auto workerAddr : workers) {
@@ -273,6 +282,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                     });
                     threads_vector.push_back(move(t));
                 } else {
+                    // TODO: This hasn't been tested, in my testing data.isPlacedAtWorker is always true
                     // TODO: This is executed at the coordinator ? Why ?
                     std::cout << "Data not placed at worker\n";
                     auto slicedMat = mat->sliceRow(dp->range.get()->r_start,
@@ -282,17 +292,18 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                         writeLustreCsv(mat, filename, dctx);
                         }
                     else if (extension == ".dbfs") {
-                        writeLustreCsv(mat, filename, dctx);
+                        writeDaphneLustre(mat, filename, dctx);
                     }
                 }
             } else {
-                std::cout << "No dp placement" << std::endl;
-                if (extension == ".csv") {
-                    writeLustreCsv(mat, filename, dctx);
-                    }
-                else if (extension == ".dbfs") {
-                    writeLustreCsv(mat, filename, dctx);
-                }
+                // TODO: This hasn't been tested, in my testing data.isPlacedAtWorker is always true
+                // std::cout << "No dp placement" << std::endl;
+                // if (extension == ".csv") {
+                //     writeLustreCsv(mat, filename, dctx);
+                //     }
+                // else if (extension == ".dbfs") {
+                //     writeLustreCsv(mat, filename, dctx);
+                // }
                 continue;
             }
             // TODO we should also store ranges that did not have a
@@ -304,3 +315,5 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
 
     }
 };
+
+#endif

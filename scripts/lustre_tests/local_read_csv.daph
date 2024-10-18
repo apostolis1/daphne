@@ -1,0 +1,14 @@
+# Returns `true` if the two given column vectors contain approximately
+# the same elements, `false` otherwise.
+def isEqApprox(x:matrix<f64>, y:matrix<f64>) -> bool {
+    eps = 0.00001;
+    # The check `<= eps` ensures that potential NaNs result in 0 and
+    # thus make the check return `false`.
+    return as.bool(sum(abs(x - y) <= eps) == nrow(x));
+}
+
+
+
+C = readMatrix("/lustre/testwineout.csv.lustre");
+D = readMatrix("/daphne/data/wine.csv");
+print(isEqApprox(C, D));

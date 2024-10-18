@@ -1,13 +1,7 @@
 #pragma once
 
-#include <runtime/local/context/DaphneContext.h>
-#include <runtime/local/datastructures/DataObjectFactory.h>
-#include <runtime/local/datastructures/DenseMatrix.h>
-#include "LustreUtils.h"
-#include <filesystem>
-
 template <class DTArg>
-struct WriteLustreCsv
+struct WriteDaphneLustre
 {
     static void apply(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) = delete;
 };
@@ -17,32 +11,10 @@ struct WriteLustreCsv
 // ****************************************************************************
 
 template <class DTArg>
-void writeLustreCsv(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
-    std:: cout << "writeLustreCsv convenience function called \n";
-    WriteLustreCsv<DTArg>::apply(arg, filename, dctx, start_row);
+void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
+    std:: cout << "writeDaphneLustre convenience function called \n";
+    WriteDaphneLustre<DTArg>::apply(arg, filename, dctx, start_row);
 }
-
-// Utility functions
-ssize_t writeBufferToFile(int fd, char* buffer, size_t size, size_t offset) {
-    std::cout << "Writing at offset: " << offset << std::endl;
-    ssize_t res = pwrite(fd, buffer, size, offset);
-    return res;
-
-    // TODO Check if I need a persistent write, something like
-    // https://stackoverflow.com/questions/694188/when-does-the-write-system-call-write-all-of-the-requested-buffer-versus-just
-    //     while(size > 0 && (res=write(fd,buff,size))!=size) {
-    //     if(res<0 && errno==EINTR) 
-    //     continue;
-    //     if(res < 0) {
-    //         // real error processing
-    //         break;
-    //     }
-    //     size-=res;
-    //     buf+=res;
-    // }
-}
-
-
 
 
 // ****************************************************************************
@@ -53,10 +25,12 @@ ssize_t writeBufferToFile(int fd, char* buffer, size_t size, size_t offset) {
 // DenseMatrix
 // ----------------------------------------------------------------------------
 
+
 template <typename VT>
-struct WriteLustreCsv<DenseMatrix<VT>> {
+struct WriteDaphneLustre<DenseMatrix<VT>> {
     static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
-        std::cout << "Write lustre kernel called\n";
+        std::cout << "Template for Densematrix" << std::endl;
+
         if (filename == nullptr)
             throw(std::runtime_error("File path required"));
         
@@ -127,64 +101,7 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
         const size_t rowSkip = arg->getRowSkip();
         const size_t argNumCols = arg->getNumCols();
 
-        int charsPerCell = 12;
-        size_t lineSize = argNumCols * charsPerCell + (argNumCols-1) * sizeof(',') + sizeof('\n');
-        std::cout << "Linesize for write: " << lineSize << std::endl;
-        size_t offset = start_row * lineSize;
-        char buffer[1UL << 7];
-        size_t charsWrittenToBuffer = 0;
 
-        for (size_t i = 0; i < arg->getNumRows(); ++i)
-        {
-            for(size_t j = 0; j < argNumCols; ++j)
-            {
-                // std::cout << "Cell: " << i << " " << j << std::endl;
-                if (sizeof(buffer) > charsWrittenToBuffer + charsPerCell) {
-                    sprintf(
-                        buffer+charsWrittenToBuffer,
-                        std::is_floating_point<VT>::value ? "%12f" : (std::is_same<VT, long int>::value ? "%12ld" : "%12d"),
-                        valuesArg[i*rowSkip + j]
-                    );
-                    charsWrittenToBuffer += charsPerCell;
-                }
-                else {
-                    // Write buffer with pwrite
-                    ssize_t res = writeBufferToFile(fd, buffer, charsWrittenToBuffer, offset);
-                    charsWrittenToBuffer = 0;
-                    offset += res;
-                    sprintf(
-                        buffer+charsWrittenToBuffer,
-                        std::is_floating_point<VT>::value ? "%12f" : (std::is_same<VT, long int>::value ? "%12ld" : "%12d"),
-                        valuesArg[i*rowSkip + j]
-                    );
-                    charsWrittenToBuffer += charsPerCell;
-                }
-
-                std::string c = j < (arg->getNumCols() - 1) ? "," : "\n"; 
-                if (sizeof(buffer) > charsWrittenToBuffer + sizeof(c)) 
-                {
-                    sprintf(buffer+charsWrittenToBuffer, c.c_str());
-                    charsWrittenToBuffer++;
-                }
-                else 
-                {
-                    // Pwrite buffer
-                    ssize_t res = writeBufferToFile(fd, buffer, charsWrittenToBuffer, offset);
-                    charsWrittenToBuffer = 0;
-                    offset += res;
-                    sprintf(buffer+charsWrittenToBuffer, c.c_str());
-                    charsWrittenToBuffer++;
-                }
-            }
-        }
-
-        // Finally write any data that might still be in buffer
-        ssize_t res = writeBufferToFile(fd, buffer, charsWrittenToBuffer, offset);
-        std::cout << "Successfull content write up to offset: " << offset+res << std::endl;
-        if (close(fd) < 0) {
-                fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
-                return ;
-        }
-        return;
     }
+    
 };

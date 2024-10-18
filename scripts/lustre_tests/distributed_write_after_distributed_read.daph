@@ -1,0 +1,2 @@
+XY = readMatrix("/lustre/testwineout.csv.lustre");
+writeMatrix(XY, "/lustre/testwineout_new.csv.lustre");

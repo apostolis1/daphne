@@ -1,0 +1,2 @@
+XY = readMatrix("/daphne/data/wine.csv");
+writeMatrix(XY, "/lustre/testwineout.csv.lustre");

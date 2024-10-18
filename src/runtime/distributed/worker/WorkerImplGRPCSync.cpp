@@ -24,7 +24,7 @@
 
 #include <parser/metadata/MetaDataParser.h>
 #include <runtime/local/io/lustre/ReadLustreCsv.h>
-#include <runtime/local/io/lustre/readDaphneLustre.h>
+#include <runtime/local/io/lustre/ReadDaphneLustre.h>
 #include <runtime/local/io/lustre/WriteLustreCsv.h>
 
 #if USE_HDFS
@@ -208,9 +208,7 @@ WorkerImplGRPCSync::ReadLustre(::grpc::ServerContext *context,
         readLustreCsv(res, request->filename().c_str(), request->num_rows(),
                     request->num_cols(), ',', &ctx, request->start_row());
     else if (request->filename().find("dbdf") != std::string::npos)
-        ;
-        // readDaphneLustre(res, request->filename().c_str(), &ctx,
-        //                request->start_row());
+        readDaphneLustre(res, request->filename().c_str(), &ctx, request->start_row());
     std::cout << "Finished Request to local Kernel, getting data back";
     auto storedInfo = WorkerImpl::Store(dynamic_cast<Structure *>(res));
 
