@@ -243,11 +243,11 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
             throw std::runtime_error("Error opening Lustre file");
         // In case of daphne object file the coordinator must  
         if (extension == ".dbdf") {
-            size_t length;
-            // length = DaphneSerializer<DenseMatrix<DTArg>>::length(mat);
-            // std::vector<char> buffer(length);
-            // DaphneSerializer<DenseMatrix<DTArg>>::serializeHeader(mat, buffer);
-
+            size_t headerSize = DaphneSerializer<DTArg>::headerSize(mat);
+            std::vector<char> buffer(headerSize);
+            DaphneSerializer<DTArg>::serializeHeader(mat, buffer.data());
+            // The header is always written at the beginning of the file
+            pwrite(fd, buffer.data(), headerSize, 0);
         }
         close(fd);
         std::vector<std::thread> threads_vector;
@@ -282,27 +282,25 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                     });
                     threads_vector.push_back(move(t));
                 } else {
-                    // TODO: This hasn't been tested, in my testing data.isPlacedAtWorker is always true
-                    // TODO: This is executed at the coordinator ? Why ?
                     std::cout << "Data not placed at worker\n";
                     auto slicedMat = mat->sliceRow(dp->range.get()->r_start,
                                                    dp->range.get()->r_start +
                                                        dp->range.get()->r_len);
+                    // TODO: This hasn't been tested
                     if (extension == ".csv") {
-                        writeLustreCsv(mat, filename, dctx);
+                        writeLustreCsv(slicedMat, filename, dctx);
                         }
                     else if (extension == ".dbdf") {
-                        writeDaphneLustre(mat, filename, dctx);
+                        writeDaphneLustre(slicedMat, filename, dctx);
                     }
                 }
             } else {
-                // TODO: This hasn't been tested, in my testing data.isPlacedAtWorker is always true
-                // std::cout << "No dp placement" << std::endl;
+                std::cout << "No dp placement, this will be skipped" << std::endl;
                 // if (extension == ".csv") {
                 //     writeLustreCsv(mat, filename, dctx);
                 //     }
                 // else if (extension == ".dbdf") {
-                //     writeLustreCsv(mat, filename, dctx);
+                //     writeDaphneLustre(mat, filename, dctx);
                 // }
                 continue;
             }

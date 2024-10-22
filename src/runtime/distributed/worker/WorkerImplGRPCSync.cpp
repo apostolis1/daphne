@@ -26,6 +26,7 @@
 #include <runtime/local/io/lustre/ReadLustreCsv.h>
 #include <runtime/local/io/lustre/ReadDaphneLustre.h>
 #include <runtime/local/io/lustre/WriteLustreCsv.h>
+#include <runtime/local/io/lustre/WriteDaphneLustre.h>
 
 #if USE_HDFS
 #include <runtime/local/io/HDFS/ReadDaphneHDFS.h>
@@ -236,8 +237,8 @@ WorkerImplGRPCSync::WriteLustre(::grpc::ServerContext *context,
         std::cout << "Lustre CSV write\n";
     }
     else if (request->filename().find("dbdf") != std::string::npos) {
-        // writeDaphneHDFS(mat, request->dirname().c_str(), &ctx);
         std::cout << "Lustre Daphne object write\n";
+        writeDaphneLustre(mat, filename, &ctx, start_row, false);
     }
     else {
         std::cout << "Extention not supported for file: " << filename << std::endl;

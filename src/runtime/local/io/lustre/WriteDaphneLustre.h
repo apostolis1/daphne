@@ -5,7 +5,7 @@
 template <class DTArg>
 struct WriteDaphneLustre
 {
-    static void apply(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) = delete;
+    static void apply(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) = delete;
 };
 
 // ****************************************************************************
@@ -13,9 +13,9 @@ struct WriteDaphneLustre
 // ****************************************************************************
 
 template <class DTArg>
-void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
+void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) {
     std:: cout << "writeDaphneLustre convenience function called \n";
-    WriteDaphneLustre<DTArg>::apply(arg, filename, dctx, start_row);
+    WriteDaphneLustre<DTArg>::apply(arg, filename, dctx, start_row, writeHeader);
 }
 
 
@@ -31,8 +31,12 @@ void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_
 template <typename VT>
 struct WriteDaphneLustre<DenseMatrix<VT>> {
     static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) {
-        std::cout << "Template for Densematrix" << std::endl;
-
+        if (dctx->config.use_distributed) {
+            std::cout << "Local kernel called through distributed runtime, won't write header" << std::endl;
+        }
+        else {
+            std::cout << "Local kernel called through local runtime, will write header" << std::endl;
+        }
         if (filename == nullptr)
             throw(std::runtime_error("File path required"));
         
@@ -109,9 +113,10 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         size_t offset;
         size_t length;
         length = DaphneSerializer<DenseMatrix<VT>>::length(arg);
+        std::vector<char> buffer(length);
         if (writeHeader) {
+            // Serialize the whole matrix, including the header
             offset = 0;
-            std::vector<char> buffer(length);
             DaphneSerializer<DenseMatrix<VT>>::serialize(arg, buffer);
             size_t res = pwrite(fd, buffer.data(), length, offset);
             if (close(fd) < 0) {
@@ -123,6 +128,10 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
             auto headerSize = DaphneSerializer<DenseMatrix<VT>>::headerSize(arg);
             offset = headerSize;
             offset += start_row * argNumCols * sizeof(VT);
+            // Write data at offset
+            // Serialize everything after the header
+            DaphneSerializer<DenseMatrix<VT>>::serialize(arg, buffer.data(), length, headerSize);
+            size_t res = pwrite(fd, buffer.data(), length - headerSize, offset);
         }
         
     }
