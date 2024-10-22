@@ -115,10 +115,6 @@ template <typename VT> struct Read<DenseMatrix<VT>> {
             if (res == nullptr)
                 res = DataObjectFactory::create<DenseMatrix<VT>>(
                     fmd.numRows, fmd.numCols, false);
-            if (res == nullptr) 
-                std::cout << "Res remains nullptr\n";
-            else
-                std::cout << "Successfully initialized res\n";
             readLustre(res, filename, ctx);
             break;
         default:

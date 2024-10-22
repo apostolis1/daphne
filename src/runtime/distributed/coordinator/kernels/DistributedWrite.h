@@ -184,8 +184,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
-        std::cout << "Grabbed workers" << std::endl;
-
         if (mat == nullptr) {
             throw std::runtime_error("matrix argument is null");
         }
@@ -194,7 +192,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
 
         // Get nested file extension
         auto extension = filePath.stem().extension().string();
-        std::cout << "Extention: " << extension << std::endl;
         // The coordinator should create the file, so each worker writes to the existing file at the specified offset
         std::string fn(filename);
         
@@ -230,7 +227,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         // Write metadata
         
         dprintf(fd, "%s", fmdStr.c_str());
-        std::cout << "Successfull metadata write \n";
         if (close(fd) < 0) {
                 fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
                 return ;
@@ -282,7 +278,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                     });
                     threads_vector.push_back(move(t));
                 } else {
-                    std::cout << "Data not placed at worker\n";
                     auto slicedMat = mat->sliceRow(dp->range.get()->r_start,
                                                    dp->range.get()->r_start +
                                                        dp->range.get()->r_len);

@@ -201,8 +201,6 @@ WorkerImplGRPCSync::ReadLustre(::grpc::ServerContext *context,
                              ::distributed::StoredData *response) {
     DaphneContext ctx(cfg, KernelDispatchMapping::instance(),
                       Statistics::instance(), StringRefCounter::instance());
-    // TODO: Check this HDFS Context
-    // createHDFSContext(&ctx);
     DenseMatrix<double> *res = DataObjectFactory::create<DenseMatrix<double>>(
         request->num_rows(), request->num_cols(), false);
     if (request->filename().find("csv") != std::string::npos)
@@ -210,7 +208,6 @@ WorkerImplGRPCSync::ReadLustre(::grpc::ServerContext *context,
                     request->num_cols(), ',', &ctx, request->start_row());
     else if (request->filename().find("dbdf") != std::string::npos)
         readDaphneLustre(res, request->filename().c_str(), &ctx, request->start_row());
-    std::cout << "Finished Request to local Kernel, getting data back";
     auto storedInfo = WorkerImpl::Store(dynamic_cast<Structure *>(res));
 
     response->set_identifier(storedInfo.identifier);
@@ -225,19 +222,15 @@ WorkerImplGRPCSync::WriteLustre(::grpc::ServerContext *context,
                               ::distributed::Empty *response) {
     DaphneContext ctx(cfg, KernelDispatchMapping::instance(),
                       Statistics::instance(), StringRefCounter::instance());
-    // createHDFSContext(&ctx);
     StoredInfo si({request->matrix().identifier(), request->matrix().num_rows(),
                    request->matrix().num_cols()});
     auto mat = dynamic_cast<DenseMatrix<double> *>(WorkerImpl::Transfer(si));
     auto filename = (request->filename()).c_str();
     auto start_row = request->start_row();
-    std::cout << "Should start writing at start row: " << start_row << std::endl;
     if (request->filename().find("csv") != std::string::npos) {
         writeLustreCsv(mat, filename, &ctx, start_row);
-        std::cout << "Lustre CSV write\n";
     }
     else if (request->filename().find("dbdf") != std::string::npos) {
-        std::cout << "Lustre Daphne object write\n";
         writeDaphneLustre(mat, filename, &ctx, start_row, false);
     }
     else {

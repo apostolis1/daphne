@@ -43,7 +43,6 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
                       size_t numCols, char delim, DCTX(dctx),
                       size_t startRow = 0) {
         // Reads numRows to the DenseMatrix res, starting from startRow
-        std::cout << "Here\n";
         if (lustreFilename == nullptr) {
             throw std::runtime_error("File required");
         }
@@ -63,7 +62,6 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
             throw std::runtime_error("Could not initialize result matrix");
         }
 
-        std::cout << "ReadLustreCSV for DenseMatrix called\n";
 
         int fd;
         // The example here uses simple open instead of llapi_file_open https://doc.lustre.org/lustre_manual.xhtml#example_using_llapi
@@ -76,18 +74,11 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
 
         int charsPerCell = 12;
         size_t lineSize = numCols * charsPerCell + (numCols-1) * sizeof(delim) + sizeof('\n');
-        std::cout << "Linesize for read: " << lineSize << std::endl;
         size_t parsedRows = 0;
         // TODO: check if skiprows affects offset somehow
-        // TODO: Testing changes, try to read everything but the first row
-        // startRow = 10;
-        // numRows = numRows - startRow;
-        std::cout << "StartRow is : "<< startRow << std::endl;
         size_t offset = startRow * lineSize;
         VT *valuesRes = res->getValues();
 
-
-        printf("Trying to read %li rows, starting from row %li \n", numRows, startRow);
         // TODO: Increate this buffer size, it is small only to cause multiple writes to catch potential errors during testing 
         // Should be something like char buffer[1UL << 20];
         char buffer[1UL << 7];
@@ -95,15 +86,12 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
         ssize_t n = 0;
         // Read until numRows
         while (parsedRows < numRows) {
-            printf("Parsed Rows: %li\n", parsedRows);
             std::string line;
 
             do {
                 if (cur == nullptr) { // buffer is empty or all data in buffer are parsed already
-                    printf("Attempting to read at offset %li\n", offset);
                     n = pread(fd, buffer, sizeof(buffer), offset);
                     // Move the offset according to data read
-                    printf("Succesfully read %li bytes\n", n);
                     offset += n;
                     if (n < 0) {
                         throw std::runtime_error(
@@ -116,17 +104,10 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
                 char *eol = (char *)std::memchr(cur, '\n',  static_cast<ssize_t>(buffer+n - cur));
                 
                 if (eol == nullptr || static_cast<ssize_t>(eol - cur) >= n) { // End of line not found or eol found after the n chars
-                    printf("Can't find eol, appending to line\n");
-                    std::cout << "Line before append is: **:" << line << ":** " << std::endl ;
                     line.append(cur, static_cast<ssize_t>(buffer+n - cur)); // I have already consumed cur elements from buffer, take that into account
-                    std::cout << "Line after append is: **:" << line << ":** " << std::endl ;
                     cur = nullptr;
                 } else { // End of line found
-                    printf("Found eol, appending to line\n");
-                    std::cout << "Line before append is: **:" << line << ":** " << std::endl ;
-                    printf("Trying to append %li chars\n", eol - cur);
                     line.append(cur, eol - cur);
-                    std::cout << "Line after append is: **:" << line << ":** " << std::endl ;
                     cur = eol + 1; // Keep track of start of remaining data in buffer
                 }
             } while (cur == nullptr);
@@ -134,8 +115,6 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
             // TODO: Check if we need to skip rows for some reason, is it done in  HDFS ?
 
             // Parse row
-            printf("Parsing line %li\n", startRow + parsedRows);
-            std::cout << "Raw data is: **:" << line << ":** " << std::endl ;
             size_t pos = 0;
             for (size_t c = 0; c < numCols; c++) {
                 VT val;
@@ -143,7 +122,7 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
 
                 // TODO This assumes that rowSkip == numCols.
                 *valuesRes = val;
-                std::cout << "Found val: " << val << std::endl;
+                // std::cout << "Found val: " << val << std::endl;
                 ++valuesRes;
                 // TODO We could even exploit the fact that the strtoX
                 // functions can return a pointer to the first character
@@ -156,7 +135,6 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
                     pos++; // skip delimiter
                 }
             }
-            printf("Finished parsing line %li\n", startRow + parsedRows);
             parsedRows++;
             if (parsedRows == numRows)
                 break;

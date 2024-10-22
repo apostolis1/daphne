@@ -38,7 +38,6 @@ template <typename VT> struct ReadDaphneLustre<DenseMatrix<VT>> {
         if (res == NULL) {
             throw std::runtime_error("Could not initialize result matrix");
         }
-        std::cout << "Reading daphne object from lustre" << std::endl;
         size_t numRows = res->getNumRows();
         size_t numCols = res->getNumCols();
 
@@ -78,7 +77,6 @@ template <typename VT> struct ReadDaphneLustre<DenseMatrix<VT>> {
             }
             offset += n;
             parsedBytes += n;
-            std::cout << "Parsedbytes : " << parsedBytes << std::endl; 
             res = DaphneSerializer<DenseMatrix<VT>>::deserialize(
                 buffer.data(), n, res, startSerByte);
             startSerByte += n;

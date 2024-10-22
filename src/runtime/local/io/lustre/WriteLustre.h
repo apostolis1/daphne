@@ -19,7 +19,6 @@ struct WriteLustre
         std::filesystem::path filePath(filename);
         auto extension = filePath.stem().extension().string();
         if (dctx->config.use_distributed) {
-            std::cout << "Distributed write initiated\n";
             distributedWrite<DTArg>(arg, filename, dctx);
         } else {
             if (extension == ".csv") {              

@@ -146,7 +146,6 @@ struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTRes> {
 #endif
         // TODO Make this work when HDFS defined, probably split the functions up and use the file extention or something to decide
         // whether we have lustre or HDFS, or with the compile flag --lustre
-        std::cout << "Distributed Read for Sync-GRPC\n";
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 

@@ -18,13 +18,11 @@ struct WriteLustreCsv
 
 template <class DTArg>
 void writeLustreCsv(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
-    std:: cout << "writeLustreCsv convenience function called \n";
     WriteLustreCsv<DTArg>::apply(arg, filename, dctx, start_row);
 }
 
 // Utility functions
 ssize_t writeBufferToFile(int fd, char* buffer, size_t size, size_t offset) {
-    std::cout << "Writing at offset: " << offset << std::endl;
     ssize_t res = pwrite(fd, buffer, size, offset);
     return res;
 
@@ -56,7 +54,6 @@ ssize_t writeBufferToFile(int fd, char* buffer, size_t size, size_t offset) {
 template <typename VT>
 struct WriteLustreCsv<DenseMatrix<VT>> {
     static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0) {
-        std::cout << "Write lustre kernel called\n";
         if (filename == nullptr)
             throw(std::runtime_error("File path required"));
         
@@ -93,7 +90,6 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
             // Write metadata
             
             dprintf(fd, "%s", fmdStr.c_str());
-            std::cout << "Successfull metadata write \n";
             if (close(fd) < 0) {
                     fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
                     return ;
@@ -120,8 +116,6 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
         // Open lustre file
         fd = open(filename, O_WRONLY, 0644);
         
-        std::cout << "Writing data: rows: " << arg->getNumRows() << " cols: " << arg->getNumCols() << " starting from row: " << start_row << std::endl;
-        
         // Write actual data
         const VT * valuesArg = arg->getValues();
         const size_t rowSkip = arg->getRowSkip();
@@ -129,7 +123,6 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
 
         int charsPerCell = 12;
         size_t lineSize = argNumCols * charsPerCell + (argNumCols-1) * sizeof(',') + sizeof('\n');
-        std::cout << "Linesize for write: " << lineSize << std::endl;
         size_t offset = start_row * lineSize;
         char buffer[1UL << 7];
         size_t charsWrittenToBuffer = 0;
@@ -138,7 +131,6 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
         {
             for(size_t j = 0; j < argNumCols; ++j)
             {
-                // std::cout << "Cell: " << i << " " << j << std::endl;
                 if (sizeof(buffer) > charsWrittenToBuffer + charsPerCell) {
                     sprintf(
                         buffer+charsWrittenToBuffer,
@@ -180,7 +172,6 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
 
         // Finally write any data that might still be in buffer
         ssize_t res = writeBufferToFile(fd, buffer, charsWrittenToBuffer, offset);
-        std::cout << "Successfull content write up to offset: " << offset+res << std::endl;
         if (close(fd) < 0) {
                 fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
                 return ;

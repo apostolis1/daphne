@@ -14,7 +14,6 @@ struct WriteDaphneLustre
 
 template <class DTArg>
 void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) {
-    std:: cout << "writeDaphneLustre convenience function called \n";
     WriteDaphneLustre<DTArg>::apply(arg, filename, dctx, start_row, writeHeader);
 }
 
@@ -31,12 +30,6 @@ void writeDaphneLustre(const DTArg *arg, const char *filename, DCTX(dctx), size_
 template <typename VT>
 struct WriteDaphneLustre<DenseMatrix<VT>> {
     static void apply(const DenseMatrix<VT> *arg, const char *filename, DCTX(dctx), size_t start_row = 0, bool writeHeader = true) {
-        if (dctx->config.use_distributed) {
-            std::cout << "Local kernel called through distributed runtime, won't write header" << std::endl;
-        }
-        else {
-            std::cout << "Local kernel called through local runtime, will write header" << std::endl;
-        }
         if (filename == nullptr)
             throw(std::runtime_error("File path required"));
         
@@ -51,7 +44,6 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         // Similar for the actual lustre data file
         // We might want to change that, depending on what the intented behavior is when writing a file that already exists (we delete it / throw an error ?)
         if (!std::filesystem::exists(metadatafilePath)) {   
-            std::cout << "Writing metadata from local kernel" << std::endl;     
             // Write file metadata
             FileMetaData fmd(arg->getNumRows(), arg->getNumCols(), true, ValueTypeUtils::codeFor<VT>);
             auto fmdStr = MetaDataParser::writeMetaDataToString(fmd);
@@ -74,7 +66,6 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
             // Write metadata
             
             dprintf(fd, "%s", fmdStr.c_str());
-            std::cout << "Successfull metadata write \n";
             if (close(fd) < 0) {
                     fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
                     return ;
@@ -85,7 +76,6 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         std::filesystem::path filePath(filename);
 
         if (!std::filesystem::exists(filePath)) {
-            std::cout << "Creating .lustre file from local kernel" << std::endl;     
 
             int stripe_size = 65536;    /* System default is 4M */
             int stripe_offset = -1;     /* Start at default */
@@ -101,9 +91,7 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
         
         // Open lustre file
         fd = open(filename, O_WRONLY, 0644);
-        
-        std::cout << "Writing data: rows: " << arg->getNumRows() << " cols: " << arg->getNumCols() << " starting from row: " << start_row << std::endl;
-        
+                
         // Write actual data
         const VT * valuesArg = arg->getValues();
         const size_t rowSkip = arg->getRowSkip();
