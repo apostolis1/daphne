@@ -1,2 +1,3 @@
 D = readMatrix("/daphne/data/wine.csv");
+writeMatrix(D, "/lustre/wine.dbdf.lustre");
 C = readMatrix("/lustre/wine.dbdf.lustre");

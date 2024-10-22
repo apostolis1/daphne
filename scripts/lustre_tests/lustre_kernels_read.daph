@@ -1,0 +1,10 @@
+C = readMatrix($A);
+writeMatrix(C, $B);
+
+D = readMatrix($C);
+writeMatrix(D, $D);
+
+# Daphne Matrices A, B, C, D must be the same
+# The binary files /lustre/wine.csv.lustre , /lustre/wine_compare.csv.lustre must be the same
+# Csv files written from lustre kernel won't be the same as the ones from the original kernel because they are written using padding
+# The binary files /lustre/wine.dbdf.lustre , /lustre/wine_compare.dbdf.lustre, /daphne/data/wine.dbdf must be the same

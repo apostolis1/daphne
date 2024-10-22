@@ -1,0 +1,10 @@
+# These files are created by using the original kernels and simply renaming to .lustre
+# They are not generated using the lustre kernels, they will be used as the ground truth against which the
+# lustre kernels are tested
+# The .lustre extention added to the original files is needed to trigger the distributed placement information of the kernels
+# We want to check that the files created by the lustre kernels are the same as the ones created by the original kernels
+
+A = readMatrix($A);
+
+writeMatrix(A, $B);
+writeMatrix(A, $C);

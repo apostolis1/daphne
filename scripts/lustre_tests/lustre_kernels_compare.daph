@@ -1,0 +1,45 @@
+# Read a matrix via the original kernel and the lustre kernel
+# Compare the data structures created
+
+# Returns `true` if the two given column vectors contain approximately
+# the same elements, `false` otherwise.
+def isEqApprox(x:matrix<f64>, y:matrix<f64>) -> bool {
+    eps = 0.00001;
+    # The check `<= eps` ensures that potential NaNs result in 0 and
+    # thus make the check return `false`.
+    return as.bool(sum(abs(x - y) <= eps) == nrow(x));
+}
+
+def isEqLustre(x:matrix<f64>, y:matrix<f64>) -> bool {
+    res = true;
+    for( i in 1:nrow(x) ) {
+        for( j in 1:ncol(x) ) {
+            #print("Cell"+i+","+j+"\n");
+            #print(x[i-1,j-1]);
+            #print(y[i-1,j-1]);
+            if (as.scalar(x[i-1,j-1]) != as.scalar(y[i-1,j-1])) {
+                print("FAIL");
+                print("Diff for row: ");
+                print(i-1);
+                print("Col: ");
+                print(j-1);
+                print(as.scalar(x[i-1,j-1]),false);
+                print(" != ",false);
+                print(as.scalar(y[i-1,j-1]));
+                print(x[i-1,j-1],false);
+                print(" != ",false);
+                print(y[i-1,j-1]);
+                res = false;
+            }
+        }
+    }
+    return res;
+}
+
+A = readMatrix($A);
+B = readMatrix($B);
+
+if (isEqLustre(A,B))
+    print("PASS");
+else
+    print("FAIL");
