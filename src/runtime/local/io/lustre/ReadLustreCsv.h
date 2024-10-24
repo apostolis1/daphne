@@ -81,7 +81,7 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
 
         // TODO: Increate this buffer size, it is small only to cause multiple writes to catch potential errors during testing 
         // Should be something like char buffer[1UL << 20];
-        char buffer[1UL << 7];
+        char buffer[1UL << 20];
         char *cur = nullptr;
         ssize_t n = 0;
         // Read until numRows

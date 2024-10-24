@@ -18,14 +18,14 @@ def isEqLustre(x:matrix<f64>, y:matrix<f64>) -> bool {
             #print(x[i-1,j-1]);
             #print(y[i-1,j-1]);
             if (as.scalar(x[i-1,j-1]) != as.scalar(y[i-1,j-1])) {
-                print("FAIL");
-                print("Diff for row: ");
-                print(i-1);
-                print("Col: ");
-                print(j-1);
+                # print("FAIL");
+                print("Diff for row: ", false);
+                print(i-1, false);
+                print(" Col: ", false);
+                print(j-1, false);
                 print(as.scalar(x[i-1,j-1]),false);
                 print(" != ",false);
-                print(as.scalar(y[i-1,j-1]));
+                print(as.scalar(y[i-1,j-1]), false);
                 print(x[i-1,j-1],false);
                 print(" != ",false);
                 print(y[i-1,j-1]);

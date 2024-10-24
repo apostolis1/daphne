@@ -124,7 +124,7 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
         int charsPerCell = 12;
         size_t lineSize = argNumCols * charsPerCell + (argNumCols-1) * sizeof(',') + sizeof('\n');
         size_t offset = start_row * lineSize;
-        char buffer[1UL << 7];
+        char buffer[1UL << 20];
         size_t charsWrittenToBuffer = 0;
 
         for (size_t i = 0; i < arg->getNumRows(); ++i)

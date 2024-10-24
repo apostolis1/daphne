@@ -255,8 +255,8 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
                     dynamic_cast<AllocationDescriptorGRPC &>(*(dp->allocation))
                         .getDistributedData();
                 if (data.isPlacedAtWorker) {
-                    std::cout << "Data placed at worker\n";
-                    std::cout << "r_start: " << dp->range.get()->r_start << " r_len: " << dp->range.get()->r_len << std::endl;
+                    // std::cout << "Data placed at worker\n";
+                    // std::cout << "r_start: " << dp->range.get()->r_start << " r_len: " << dp->range.get()->r_len << std::endl;
                     std::thread t([=, &mat]() {
                         auto stub = ctx->stubs[workerAddr].get();
 
