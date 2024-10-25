@@ -12,6 +12,7 @@ def isEqApprox(x:matrix<f64>, y:matrix<f64>) -> bool {
 
 def isEqLustre(x:matrix<f64>, y:matrix<f64>) -> bool {
     res = true;
+    diffs = 0;
     for( i in 1:nrow(x) ) {
         for( j in 1:ncol(x) ) {
             #print("Cell"+i+","+j+"\n");
@@ -19,6 +20,7 @@ def isEqLustre(x:matrix<f64>, y:matrix<f64>) -> bool {
             #print(y[i-1,j-1]);
             if (as.scalar(x[i-1,j-1]) != as.scalar(y[i-1,j-1])) {
                 # print("FAIL");
+                diffs = diffs + 1;
                 print("Diff for row: ", false);
                 print(i-1, false);
                 print(" Col: ", false);
@@ -33,6 +35,10 @@ def isEqLustre(x:matrix<f64>, y:matrix<f64>) -> bool {
             }
         }
     }
+    print("Found in total ", false);
+    print(diffs, false);
+    print(" different elements");
+
     return res;
 }
 

@@ -1,0 +1,6 @@
+# This reads the original wince.csv and writes it using the original csv kernel
+# This is needed to generate a csv file via existing daphne kernels that truncate some decimal points
+# compared to the wine.csv file (e.g. wine.csv contains 9.6333333333333293)
+
+A = readMatrix("/daphne/data/wine_original.csv");
+writeMatrix(A, "/daphne/data/wine.csv");
