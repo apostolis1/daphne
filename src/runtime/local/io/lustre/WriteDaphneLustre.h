@@ -53,37 +53,22 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
             }
 
             // Open metadata file for writing
-            // TODO: These can be moved somewhere else
-            int stripe_size = 65536;    /* System default is 4M */
-            int stripe_offset = -1;     /* Start at default */
-            int stripe_count = 1;       /* Amount of stripes, eg fragments */
-            int stripe_pattern = 0;     /* only RAID 0 at this time */
-
-            fd = llapi_file_open(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY , 0644, stripe_size, -1, -1, 0);
+            fd = LustreUtils::openMetadataFile(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY);
             if (fd < 0)
                 throw std::runtime_error("Error opening Metadata file");
 
             // Write metadata
             
             dprintf(fd, "%s", fmdStr.c_str());
-            if (close(fd) < 0) {
-                    fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
-                    return ;
-            }
+            LustreUtils::closeFile(fd);
         }
         // Open .lustre file
         // If file exists don't pass the O_CREAT flag
         std::filesystem::path filePath(filename);
 
         if (!std::filesystem::exists(filePath)) {
-
-            int stripe_size = 65536;    /* System default is 4M */
-            int stripe_offset = -1;     /* Start at default */
-            int stripe_count = 1;       /* Amount of stripes, eg fragments */
-            int stripe_pattern = 0;     /* only RAID 0 at this time */
-            
-            // TODO: Maybe llapi_file_create here?
-            fd = llapi_file_open(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
+            // // TODO: Maybe llapi_file_create here?
+            fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY);
             if (fd < 0)
                 throw std::runtime_error("Error opening Lustre file");
 
@@ -107,10 +92,7 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
             offset = 0;
             DaphneSerializer<DenseMatrix<VT>>::serialize(arg, buffer);
             size_t res = pwrite(fd, buffer.data(), length, offset);
-            if (close(fd) < 0) {
-                fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
-                return ;
-            }
+            LustreUtils::closeFile(fd);
         }
         else {
             auto headerSize = DaphneSerializer<DenseMatrix<VT>>::headerSize(arg);

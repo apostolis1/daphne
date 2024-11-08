@@ -24,7 +24,6 @@ struct ReadLustreCsv
 template <class DTRes>
 void readLustreCsv(DTRes *&res, const char *lustreFilename, size_t numRows,
                  size_t numCols, char delim, DCTX(dctx), size_t startRow = 0) {
-    std::cout << *lustreFilename << std::endl;
     ReadLustreCsv<DTRes>::apply(res, lustreFilename, numRows, numCols, delim, dctx,
                               startRow);
 }
@@ -71,8 +70,11 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
         if (fd < 0) {
             throw std::runtime_error("Can't open file");
         }
+        // TODO: This need to be replaced by the LustreUtils method
+        // Currently the LustreUtils can't be linked to this file due to the compilation issue
+        // int charsPerCell = LustreUtils::getCharsPerCSVCell();
+        int charsPerCell = 17;
 
-        int charsPerCell = 12;
         size_t lineSize = numCols * charsPerCell + (numCols-1) * sizeof(delim) + sizeof('\n');
         size_t parsedRows = 0;
         // TODO: check if skiprows affects offset somehow

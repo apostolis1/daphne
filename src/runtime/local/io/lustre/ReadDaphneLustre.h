@@ -81,6 +81,8 @@ template <typename VT> struct ReadDaphneLustre<DenseMatrix<VT>> {
                 buffer.data(), n, res, startSerByte);
             startSerByte += n;
         }
-        close(fd);
+        if (close(fd) < 0) {
+            throw std::runtime_error("Can't close file");
+        }
     }
 };

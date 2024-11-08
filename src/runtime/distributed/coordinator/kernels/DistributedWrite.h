@@ -205,13 +205,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         }
         auto mdtFn = fn + ".meta";
 
-        // Open metadata file for writing
         // TODO what if the file already exists
-
-        int stripe_size = 65536;    /* System default is 4M */
-        int stripe_offset = -1;     /* Start at default */
-        int stripe_count = 1;       /* Amount of stripes, eg fragments */
-        int stripe_pattern = 0;     /* only RAID 0 at this time */
 
         // Delete files if they exist TODO: How do we handle the case when file already exists?
         if (std::filesystem::remove(static_cast<const char *>(mdtFn.c_str())))
@@ -220,21 +214,19 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
             std::cout << "Removed file " << filename << std::endl;
             
         
-        int fd = llapi_file_open(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY, 0644, stripe_size, -1, -1, 0);
+        // Open metadata file for writing
+        int fd = LustreUtils::openMetadataFile(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY);
         if (fd < 0)
             throw std::runtime_error("Error opening Metadata file");
 
         // Write metadata
         
         dprintf(fd, "%s", fmdStr.c_str());
-        if (close(fd) < 0) {
-                fprintf(stderr, "File close failed: %d (%s)\n", errno, strerror(errno));
-                return ;
-        }
+        LustreUtils::closeFile(fd);
         // Create .lustre file
         // If this is a daphne object file, the coordinator should write the header because it has the overview of the whole matrix,
         // thus it can create the header. The workers should write the data only
-        fd = llapi_file_open(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
+        fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY);
         if (fd < 0)
             throw std::runtime_error("Error opening Lustre file");
         // In case of daphne object file the coordinator must  
@@ -245,7 +237,8 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
             // The header is always written at the beginning of the file
             pwrite(fd, buffer.data(), headerSize, 0);
         }
-        close(fd);
+        LustreUtils::closeFile(fd);
+        
         std::vector<std::thread> threads_vector;
         for (auto workerAddr : workers) {
             DataPlacement *dp;
