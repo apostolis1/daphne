@@ -73,7 +73,7 @@ template <typename VT> struct ReadLustreCsv<DenseMatrix<VT>> {
         // TODO: This need to be replaced by the LustreUtils method
         // Currently the LustreUtils can't be linked to this file due to the compilation issue
         // int charsPerCell = LustreUtils::getCharsPerCSVCell();
-        int charsPerCell = 17;
+        int charsPerCell = 8;
 
         size_t lineSize = numCols * charsPerCell + (numCols-1) * sizeof(delim) + sizeof('\n');
         size_t parsedRows = 0;

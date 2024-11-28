@@ -208,11 +208,12 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         // TODO what if the file already exists
 
         // Delete files if they exist TODO: How do we handle the case when file already exists?
-        if (std::filesystem::remove(static_cast<const char *>(mdtFn.c_str())))
-            std::cout << "Removed file " << mdtFn << std::endl;
-        if (std::filesystem::remove(filename))
-            std::cout << "Removed file " << filename << std::endl;
-            
+        if (LUSTRE_DELETE_FILES_IF_EXIST) {
+            if (std::filesystem::remove(static_cast<const char *>(mdtFn.c_str())))
+                std::cout << "Removed file " << mdtFn << std::endl;
+            if (std::filesystem::remove(filename))
+                std::cout << "Removed file " << filename << std::endl;
+        }
         
         // Open metadata file for writing
         int fd = LustreUtils::openMetadataFile(static_cast<const char *>(mdtFn.c_str()), O_CREAT | O_WRONLY);

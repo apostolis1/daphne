@@ -2,10 +2,11 @@
 
 #include <lustre/lustreapi.h>
 
-#define LUSTRE_STRIPE_COUNT 2
+#define LUSTRE_STRIPE_COUNT 4
 #define FILE_SIZE 1057968 // This is a constant for testing, should implement a method that calculates it
 #define LUSTRE_STRIPE_SIZE 65536
-#define CHARS_PER_CSV_CELL 17
+#define CHARS_PER_CSV_CELL 8
+#define LUSTRE_DELETE_FILES_IF_EXIST false
 
 struct LustreUtils {
     static int getStripeCount() {
@@ -23,19 +24,19 @@ struct LustreUtils {
          * Specifically used to create metadata files, since metadata files are very small and we probably want them to only have 1 stripe and 1 ost
          */
         int stripe_size = 65536;    /* System default is 4M */
-        int stripe_offset = -1;     /* Start at default */
+        int stripe_offset = 0;     /* Put all metadata files on the first OST for testing purposes, in general it should be -1 */
         int stripe_count = 1;       /* Amount of stripes, eg fragments */
         int stripe_pattern = 0;     /* only RAID 0 at this time */
-        int fd = llapi_file_open(filename, flags , 0644, stripe_size, -1, -1, 0);
+        int fd = llapi_file_open(filename, flags , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
         return fd;
     }
 
     static int openFile(const char* filename, int flags) {
         int stripe_size = getStripeSize();    /* System default is 4M */
-        int stripe_offset = -1;     /* Start at default */
+        int stripe_offset = 0;     /* Start at OST0 for testing purposes, in general it should be -1 */
         int stripe_count = getStripeCount();       /* Amount of stripes, eg fragments */
         int stripe_pattern = 0;     /* only RAID 0 at this time */
-        int fd = llapi_file_open(filename, flags , 0644, stripe_size, -1, -1, 0);
+        int fd = llapi_file_open(filename, flags , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
         return fd;
     }
 

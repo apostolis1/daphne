@@ -136,15 +136,15 @@ DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 #------------------------------------------------------------------------------
 # Images for running DAPHNE
 #------------------------------------------------------------------------------
-# DAPHNE_TARGET=daphne
-# BASE_IMAGE=apostolis1/daphne-deps-lustre
-# FINAL_BASE_IMAGE=ubuntu:${ubuntuVersion}
-# DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
-# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
-# # DAPHNE_BUILD_FLAGS="--mpi"
-# DAPHNE_BUILD_FLAGS=
-# build_daphne -lustre
-# $USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG apostolis1/daphne:latest_${ARCH}_BASE
+DAPHNE_TARGET=daphne
+BASE_IMAGE=apostolis1/daphne-deps-lustre
+FINAL_BASE_IMAGE=ubuntu:${ubuntuVersion}
+DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
+IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+# DAPHNE_BUILD_FLAGS="--mpi"
+DAPHNE_BUILD_FLAGS=
+build_daphne -lustre
+$USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG apostolis1/daphne:latest_${ARCH}_BASE
 
 #-----------------------------------------------------------------------------
 # Images for running DAPHNE (CUDA)

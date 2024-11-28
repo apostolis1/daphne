@@ -69,6 +69,7 @@ $USE_SUDO docker run $DEBUG_FLAGS $DEVICE_FLAGS -it --rm --hostname daphne-conta
     -v "$DAPHNE_ROOT:$DAPHNE_ROOT_CONTAINER" -e GID=$GID -e TERM=screen-256color -e PATH -e LD_LIBRARY_PATH \
     -e USER=$USERNAME -e UID=$UID \
     -v /lustre:/lustre \
+    -p 5000:5000 \
    --entrypoint /daphne/containers/entrypoint-interactive.sh \
     "$DOCKER_IMAGE:$DOCKER_TAG" $command
 
