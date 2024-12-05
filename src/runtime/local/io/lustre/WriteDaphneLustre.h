@@ -68,7 +68,7 @@ struct WriteDaphneLustre<DenseMatrix<VT>> {
 
         if (!std::filesystem::exists(filePath)) {
             // // TODO: Maybe llapi_file_create here?
-            fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY);
+            fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY, dctx);
             if (fd < 0)
                 throw std::runtime_error("Error opening Lustre file");
 

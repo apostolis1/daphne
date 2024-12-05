@@ -227,7 +227,7 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         // Create .lustre file
         // If this is a daphne object file, the coordinator should write the header because it has the overview of the whole matrix,
         // thus it can create the header. The workers should write the data only
-        fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY);
+        fd = LustreUtils::openFile(static_cast<const char *>(fn.c_str()), O_CREAT | O_WRONLY, dctx);
         if (fd < 0)
             throw std::runtime_error("Error opening Lustre file");
         // In case of daphne object file the coordinator must  

@@ -2,22 +2,11 @@
 
 #include <lustre/lustreapi.h>
 
-#define LUSTRE_STRIPE_COUNT 4
-#define FILE_SIZE 1057968 // This is a constant for testing, should implement a method that calculates it
-#define LUSTRE_STRIPE_SIZE 65536
 #define CHARS_PER_CSV_CELL 8
 #define LUSTRE_DELETE_FILES_IF_EXIST false
 
 struct LustreUtils {
-    static int getStripeCount() {
-        return LUSTRE_STRIPE_COUNT;
-    }
 
-    static int getStripeSize() {
-        // It is not that simple, it has to be an even multiple of 65536
-        // return FILE_SIZE / LUSTRE_STRIPE_COUNT;
-        return LUSTRE_STRIPE_SIZE;
-    }
 
     static int openMetadataFile(const char* filename, int flags) {
         /*
@@ -31,10 +20,12 @@ struct LustreUtils {
         return fd;
     }
 
-    static int openFile(const char* filename, int flags) {
-        int stripe_size = getStripeSize();    /* System default is 4M */
+    static int openFile(const char* filename, int flags, DCTX(dctx)) {
+        // Grab params from dctx
+        int stripe_size = dctx->config.lustre_stripe_size;    /* System default is 4M */
+        int stripe_count = dctx->config.lustre_stripe_count;       /* Amount of stripes, eg fragments */
+        
         int stripe_offset = 0;     /* Start at OST0 for testing purposes, in general it should be -1 */
-        int stripe_count = getStripeCount();       /* Amount of stripes, eg fragments */
         int stripe_pattern = 0;     /* only RAID 0 at this time */
         int fd = llapi_file_open(filename, flags , 0644, stripe_size, stripe_offset, stripe_count, stripe_pattern);
         return fd;
