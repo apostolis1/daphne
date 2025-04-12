@@ -17,12 +17,13 @@
 #pragma once
 
 #include <runtime/local/context/DaphneContext.h>
+#include <runtime/local/datastructures/CSRMatrix.h>
 #include <runtime/local/datastructures/DataObjectFactory.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
-#include <runtime/local/datastructures/CSRMatrix.h>
 #include <runtime/local/datastructures/Frame.h>
 #include <runtime/local/datastructures/ValueTypeCode.h>
 #include <runtime/local/datastructures/ValueTypeUtils.h>
+#include <runtime/local/kernels/CastSca.h>
 
 // ****************************************************************************
 // Struct for partial template specialization
@@ -42,8 +43,7 @@ template <class DTRes, class DTArg> struct CastObj {
  * @param arg The data object to cast.
  * @return The casted data object.
  */
-template <class DTRes, class DTArg>
-void castObj(DTRes *&res, const DTArg *arg, DCTX(ctx)) {
+template <class DTRes, class DTArg> void castObj(DTRes *&res, const DTArg *arg, DCTX(ctx)) {
     CastObj<DTRes, DTArg>::apply(res, arg, ctx);
 }
 
@@ -64,13 +64,11 @@ template <typename VTRes> class CastObj<DenseMatrix<VTRes>, Frame> {
      * @param argFrm The input frame.
      * @param c The position of the column to cast.
      */
-    template <typename VTArg>
-    static void castCol(DenseMatrix<VTRes> *res, const Frame *argFrm,
-                        size_t c) {
+    template <typename VTArg> static void castCol(DenseMatrix<VTRes> *res, const Frame *argFrm, size_t c) {
         const size_t numRows = argFrm->getNumRows();
         const DenseMatrix<VTArg> *argCol = argFrm->getColumn<VTArg>(c);
         for (size_t r = 0; r < numRows; r++)
-            res->set(r, c, static_cast<VTRes>(argCol->get(r, 0)));
+            res->set(r, c, castSca<VTRes, VTArg>(argCol->get(r, 0), nullptr));
         DataObjectFactory::destroy(argCol);
     }
 
@@ -78,8 +76,7 @@ template <typename VTRes> class CastObj<DenseMatrix<VTRes>, Frame> {
     static void apply(DenseMatrix<VTRes> *&res, const Frame *arg, DCTX(ctx)) {
         const size_t numRows = arg->getNumRows();
         const size_t numCols = arg->getNumCols();
-        if (numCols == 1 &&
-            arg->getColumnType(0) == ValueTypeUtils::codeFor<VTRes>) {
+        if (numCols == 1 && arg->getColumnType(0) == ValueTypeUtils::codeFor<VTRes>) {
             // The input frame has a single column of the result's value type.
             // Zero-cost cast from frame to matrix.
             // TODO This case could even be used for (un)signed integers of the
@@ -92,8 +89,7 @@ template <typename VTRes> class CastObj<DenseMatrix<VTRes>, Frame> {
             // Need to change column-major to row-major layout and/or cast the
             // individual values.
             if (res == nullptr)
-                res = DataObjectFactory::create<DenseMatrix<VTRes>>(
-                    numRows, numCols, false);
+                res = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows, numCols, false);
             // TODO We could run over the rows in blocks for cache efficiency.
             for (size_t c = 0; c < numCols; c++) {
                 // TODO We do not really need all cases.
@@ -130,9 +126,11 @@ template <typename VTRes> class CastObj<DenseMatrix<VTRes>, Frame> {
                 case ValueTypeCode::UI8:
                     castCol<uint8_t>(res, arg, c);
                     break;
+                case ValueTypeCode::STR:
+                    castCol<std::string>(res, arg, c);
+                    break;
                 default:
-                    throw std::runtime_error(
-                        "CastObj::apply: unknown value type code");
+                    throw std::runtime_error("CastObj::apply: unknown value type code");
                 }
             }
         }
@@ -161,8 +159,7 @@ template <typename VTArg> class CastObj<Frame, DenseMatrix<VTArg>> {
             // Need to change row-major to column-major layout and
             // split matrix into single column matrices.
             for (size_t c = 0; c < numCols; c++) {
-                auto *colMatrix = DataObjectFactory::create<DenseMatrix<VTArg>>(
-                    numRows, 1, false);
+                auto *colMatrix = DataObjectFactory::create<DenseMatrix<VTArg>>(numRows, 1, false);
                 for (size_t r = 0; r < numRows; r++)
                     colMatrix->set(r, 0, arg->get(r, c));
                 cols.push_back(colMatrix);
@@ -176,18 +173,15 @@ template <typename VTArg> class CastObj<Frame, DenseMatrix<VTArg>> {
 //  DenseMatrix <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template <typename VTRes, typename VTArg>
-class CastObj<DenseMatrix<VTRes>, DenseMatrix<VTArg>> {
+template <typename VTRes, typename VTArg> class CastObj<DenseMatrix<VTRes>, DenseMatrix<VTArg>> {
 
   public:
-    static void apply(DenseMatrix<VTRes> *&res, const DenseMatrix<VTArg> *arg,
-                      DCTX(ctx)) {
+    static void apply(DenseMatrix<VTRes> *&res, const DenseMatrix<VTArg> *arg, DCTX(ctx)) {
         const size_t numCols = arg->getNumCols();
         const size_t numRows = arg->getNumRows();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows,
-                                                                numCols, false);
+            res = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows, numCols, false);
 
         auto resVals = res->getValues();
         auto argVals = arg->getValues();
@@ -197,12 +191,12 @@ class CastObj<DenseMatrix<VTRes>, DenseMatrix<VTArg>> {
             // a single dense array of values, we can simply
             // perform cast in one loop over that array.
             for (size_t idx = 0; idx < numCols * numRows; idx++)
-                resVals[idx] = static_cast<VTRes>(argVals[idx]);
+                resVals[idx] = castSca<VTRes, VTArg>(argVals[idx], ctx);
         else
             // res and arg might be views into a larger DenseMatrix.
             for (size_t r = 0; r < numRows; r++) {
                 for (size_t c = 0; c < numCols; c++)
-                    resVals[c] = static_cast<VTRes>(argVals[c]);
+                    resVals[c] = castSca<VTRes, VTArg>(argVals[c], ctx);
                 resVals += res->getRowSkip();
                 argVals += arg->getRowSkip();
             }
@@ -216,14 +210,12 @@ class CastObj<DenseMatrix<VTRes>, DenseMatrix<VTArg>> {
 template <typename VT> class CastObj<DenseMatrix<VT>, CSRMatrix<VT>> {
 
   public:
-    static void apply(DenseMatrix<VT> *&res, const CSRMatrix<VT> *arg,
-                      DCTX(ctx)) {
+    static void apply(DenseMatrix<VT> *&res, const CSRMatrix<VT> *arg, DCTX(ctx)) {
         const size_t numCols = arg->getNumCols();
         const size_t numRows = arg->getNumRows();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols,
-                                                             false);
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols, false);
 
         // TODO This could be done more efficiently by avoiding the get()/set()
         // calls (use append() or direct access to the underlying arrays).
@@ -244,8 +236,7 @@ template <typename VT> class CastObj<DenseMatrix<VT>, CSRMatrix<VT>> {
 template <typename VT> class CastObj<CSRMatrix<VT>, DenseMatrix<VT>> {
 
   public:
-    static void apply(CSRMatrix<VT> *&res, const DenseMatrix<VT> *arg,
-                      DCTX(ctx)) {
+    static void apply(CSRMatrix<VT> *&res, const DenseMatrix<VT> *arg, DCTX(ctx)) {
         const size_t numCols = arg->getNumCols();
         const size_t numRows = arg->getNumRows();
         size_t numNonZeros = 0;
@@ -260,8 +251,7 @@ template <typename VT> class CastObj<CSRMatrix<VT>, DenseMatrix<VT>> {
         }
 
         if (res == nullptr)
-            res = DataObjectFactory::create<CSRMatrix<VT>>(numRows, numCols,
-                                                           numNonZeros, true);
+            res = DataObjectFactory::create<CSRMatrix<VT>>(numRows, numCols, numNonZeros, true);
 
         // TODO This could be done more efficiently by avoiding the get()/set()
         // calls (use append() or direct access to the underlying arrays, then
@@ -279,16 +269,13 @@ template <typename VT> class CastObj<CSRMatrix<VT>, DenseMatrix<VT>> {
 //  CSRMatrix  <- DenseMatrix
 // ----------------------------------------------------------------------------
 
-template <typename VTres, typename VTarg>
-class CastObj<CSRMatrix<VTres>, CSRMatrix<VTarg>> {
+template <typename VTres, typename VTarg> class CastObj<CSRMatrix<VTres>, CSRMatrix<VTarg>> {
 
   public:
-    static void apply(CSRMatrix<VTres> *&res, const CSRMatrix<VTarg> *arg,
-                      DCTX(ctx)) {
+    static void apply(CSRMatrix<VTres> *&res, const CSRMatrix<VTarg> *arg, DCTX(ctx)) {
         if (res == nullptr)
-            res = DataObjectFactory::create<CSRMatrix<VTres>>(
-                arg->getNumCols(), arg->getNumRows(), arg->getNumNonZeros(),
-                true);
+            res = DataObjectFactory::create<CSRMatrix<VTres>>(arg->getNumCols(), arg->getNumRows(),
+                                                              arg->getNumNonZeros(), true);
 
         auto res_val = res->getValues();
         auto res_cidx = res->getColIdxs();
@@ -313,18 +300,15 @@ class CastObj<CSRMatrix<VTres>, CSRMatrix<VTarg>> {
 //  Matrix <- Matrix
 // ----------------------------------------------------------------------------
 
-template <typename VTRes, typename VTArg>
-class CastObj<Matrix<VTRes>, Matrix<VTArg>> {
+template <typename VTRes, typename VTArg> class CastObj<Matrix<VTRes>, Matrix<VTArg>> {
 
   public:
-    static void apply(Matrix<VTRes> *&res, const Matrix<VTArg> *arg,
-                      DCTX(ctx)) {
+    static void apply(Matrix<VTRes> *&res, const Matrix<VTArg> *arg, DCTX(ctx)) {
         const size_t numCols = arg->getNumCols();
         const size_t numRows = arg->getNumRows();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows,
-                                                                numCols, false);
+            res = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows, numCols, false);
 
         res->prepareAppend();
         for (size_t r = 0; r < numRows; ++r)

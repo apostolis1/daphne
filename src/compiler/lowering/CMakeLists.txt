@@ -32,6 +32,9 @@ add_mlir_dialect_library(MLIRDaphneTransforms
     MapOpLowering.cpp
     MatMulOpLowering.cpp
     AggAllOpLowering.cpp
+    AggDimOpLowering.cpp
+    TransposeOpLowering.cpp
+    SparsityExploitationPass.cpp
 
     DEPENDS
     MLIRDaphneOpsIncGen
@@ -44,6 +47,7 @@ find_library(HWLOC_LIB NAMES libhwloc.so HINTS ${PROJECT_BINARY_DIR}/installed/l
 
 target_link_libraries(MLIRDaphneTransforms PUBLIC
     CompilerUtils
+    Util
     MLIRSCFToControlFlow
     MLIRArithToLLVM
     MLIRMemRefToLLVM

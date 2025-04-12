@@ -21,8 +21,8 @@ ARCH=X86-64
 DOCKER_IMAGE=apostolis1/daphne-dev-lustre
 DOCKER_TAG=latest
 #DOCKER_TAG=latest_${ARCH}_CUDA
-if [ $(arch) == 'armv64'  ] || [ $(arch) == 'aarch64' ]; then
-    DOCKER_TAG=v0.2_ARMV8_BASE_ubuntu20.04
+if [[ "$(arch)" == arm*  ]] || [ $(arch) == 'aarch64' ]; then
+    DOCKER_TAG=latest_ARMV8_BASE
 fi
 
 #on some installations docker can only be run with sudo

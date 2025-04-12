@@ -28,26 +28,22 @@
 #define VALUE_TYPES int32_t, double
 
 template <typename DTArg, typename VTSel>
-void checkInsertCol(const DTArg *arg, const DTArg *ins, const VTSel lowerIncl,
-                    const VTSel upperExcl, const DTArg *exp) {
+void checkInsertCol(const DTArg *arg, const DTArg *ins, const VTSel lowerIncl, const VTSel upperExcl,
+                    const DTArg *exp) {
     DTArg *res = nullptr;
-    insertCol<DTArg, DTArg, VTSel>(res, arg, ins, lowerIncl, upperExcl,
-                                   nullptr);
+    insertCol<DTArg, DTArg, VTSel>(res, arg, ins, lowerIncl, upperExcl, nullptr);
     CHECK(*res == *exp);
     DataObjectFactory::destroy(res, exp);
 }
 
 template <typename DTArg, typename VTSel>
-void checkInsertColThrow(const DTArg *arg, const DTArg *ins,
-                         const VTSel lowerIncl, const VTSel upperExcl) {
+void checkInsertColThrow(const DTArg *arg, const DTArg *ins, const VTSel lowerIncl, const VTSel upperExcl) {
     DTArg *res = nullptr;
-    REQUIRE_THROWS_AS((insertCol<DTArg, DTArg, VTSel>(res, arg, ins, lowerIncl,
-                                                      upperExcl, nullptr)),
+    REQUIRE_THROWS_AS((insertCol<DTArg, DTArg, VTSel>(res, arg, ins, lowerIncl, upperExcl, nullptr)),
                       std::out_of_range);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("InsertCol", TAG_KERNELS, (DATA_TYPES),
-                           (VALUE_TYPES)) {
+TEMPLATE_PRODUCT_TEST_CASE("InsertCol", TAG_KERNELS, (DATA_TYPES), (VALUE_TYPES)) {
     using DT = TestType;
     using VT = typename DT::VT;
 
@@ -154,8 +150,61 @@ TEMPLATE_PRODUCT_TEST_CASE("InsertCol", TAG_KERNELS, (DATA_TYPES),
 
     DataObjectFactory::destroy(arg, ins);
 }
-TEMPLATE_PRODUCT_TEST_CASE("InsertCol - FP specific", TAG_KERNELS, (DATA_TYPES),
-                           (double)) {
+
+TEMPLATE_PRODUCT_TEST_CASE("InsertCol - string specific", TAG_KERNELS, (DATA_TYPES), (ALL_STRING_VALUE_TYPES)) {
+    using DT = TestType;
+    using VT = typename DT::VT;
+
+    auto arg = genGivenVals<DT>(3, {VT("a"), VT(""), VT("1"), VT("abc"), VT("abc"), VT("abcd"), VT(" "), VT("a"),
+                                    VT("ABC"), VT("34ab"), VT("ac"), VT("b")});
+
+    auto ins = genGivenVals<DT>(3, {VT("a"), VT("d"), VT("b"), VT("e"), VT("c"), VT("f")});
+
+    SECTION("multiple insertions, lower bound") {
+        size_t lowerIncl = 0;
+        size_t upperExcl = 2;
+        DT *exp = genGivenVals<DT>(3, {VT("a"), VT("d"), VT("1"), VT("abc"), VT("b"), VT("e"), VT(" "), VT("a"),
+                                       VT("c"), VT("f"), VT("ac"), VT("b")});
+
+        checkInsertCol(arg, ins, lowerIncl, upperExcl, exp);
+    }
+
+    SECTION("multiple insertion, middle") {
+        size_t lowerIncl = 1;
+        size_t upperExcl = 3;
+        DT *exp = genGivenVals<DT>(3, {VT("a"), VT("a"), VT("d"), VT("abc"), VT("abc"), VT("b"), VT("e"), VT("a"),
+                                       VT("ABC"), VT("c"), VT("f"), VT("b")});
+
+        checkInsertCol(arg, ins, lowerIncl, upperExcl, exp);
+    }
+
+    SECTION("multiple insertions, upper bound") {
+        size_t lowerIncl = 2;
+        size_t upperExcl = 4;
+        DT *exp = genGivenVals<DT>(3, {VT("a"), VT(""), VT("a"), VT("d"), VT("abc"), VT("abcd"), VT("b"), VT("e"),
+                                       VT("ABC"), VT("34ab"), VT("c"), VT("f")});
+
+        checkInsertCol(arg, ins, lowerIncl, upperExcl, exp);
+    }
+
+    SECTION("out of bounds - negative") {
+        size_t lowerIncl = -1;
+        size_t upperExcl = 1;
+
+        checkInsertColThrow(arg, ins, lowerIncl, upperExcl);
+    }
+
+    SECTION("out of bounds - too high") {
+        size_t lowerIncl = 3;
+        size_t upperExcl = 5;
+
+        checkInsertColThrow(arg, ins, lowerIncl, upperExcl);
+    }
+
+    DataObjectFactory::destroy(arg, ins);
+}
+
+TEMPLATE_PRODUCT_TEST_CASE("InsertCol - FP specific", TAG_KERNELS, (DATA_TYPES), (double)) {
     using DT = TestType;
     using VT = typename DT::VT;
 

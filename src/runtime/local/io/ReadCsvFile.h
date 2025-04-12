@@ -21,7 +21,6 @@
 #include <runtime/local/datastructures/DenseMatrix.h>
 #include <runtime/local/datastructures/Frame.h>
 
-#include <runtime/local/io/File.h>
 #include <runtime/local/io/utils.h>
 
 #include <util/preprocessor_defs.h>
@@ -41,37 +40,32 @@
 // ****************************************************************************
 
 template <class DTRes> struct ReadCsvFile {
-    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                      char delim) = delete;
+    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols, char delim) = delete;
 
-    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                      ssize_t numNonZeros, bool sorted = true) = delete;
+    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols, ssize_t numNonZeros,
+                      bool sorted = true) = delete;
 
-    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                      char delim, ValueTypeCode *schema) = delete;
+    static void apply(DTRes *&res, File *file, size_t numRows, size_t numCols, char delim,
+                      ValueTypeCode *schema) = delete;
 };
 
 // ****************************************************************************
 // Convenience function
 // ****************************************************************************
 
-template <class DTRes>
-void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                 char delim) {
+template <class DTRes> void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols, char delim) {
     ReadCsvFile<DTRes>::apply(res, file, numRows, numCols, delim);
 }
 
 template <class DTRes>
-void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                 char delim, ValueTypeCode *schema) {
+void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols, char delim, ValueTypeCode *schema) {
     ReadCsvFile<DTRes>::apply(res, file, numRows, numCols, delim, schema);
 }
 
 template <class DTRes>
-void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols,
-                 char delim, ssize_t numNonZeros, bool sorted = true) {
-    ReadCsvFile<DTRes>::apply(res, file, numRows, numCols, delim, numNonZeros,
-                              sorted);
+void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols, char delim, ssize_t numNonZeros,
+                 bool sorted = true) {
+    ReadCsvFile<DTRes>::apply(res, file, numRows, numCols, delim, numNonZeros, sorted);
 }
 
 // ****************************************************************************
@@ -83,8 +77,7 @@ void readCsvFile(DTRes *&res, File *file, size_t numRows, size_t numCols,
 // ----------------------------------------------------------------------------
 
 template <typename VT> struct ReadCsvFile<DenseMatrix<VT>> {
-    static void apply(DenseMatrix<VT> *&res, struct File *file, size_t numRows,
-                      size_t numCols, char delim) {
+    static void apply(DenseMatrix<VT> *&res, struct File *file, size_t numRows, size_t numCols, char delim) {
         if (file == nullptr)
             throw std::runtime_error("ReadCsvFile: requires a file to be "
                                      "specified (must not be nullptr)");
@@ -94,8 +87,7 @@ template <typename VT> struct ReadCsvFile<DenseMatrix<VT>> {
             throw std::runtime_error("ReadCsvFile: numCols must be > 0");
 
         if (res == nullptr) {
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols,
-                                                             false);
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols, false);
         }
 
         size_t cell = 0;
@@ -103,8 +95,7 @@ template <typename VT> struct ReadCsvFile<DenseMatrix<VT>> {
 
         for (size_t r = 0; r < numRows; r++) {
             if (getFileLine(file) == -1)
-                throw std::runtime_error(
-                    "ReadCsvFile::apply: getFileLine failed");
+                throw std::runtime_error("ReadCsvFile::apply: getFileLine failed");
             // TODO Assuming that the given numRows is available, this should
             // never happen.
             //      if (line == NULL)
@@ -132,43 +123,98 @@ template <typename VT> struct ReadCsvFile<DenseMatrix<VT>> {
     }
 };
 
+template <> struct ReadCsvFile<DenseMatrix<std::string>> {
+    static void apply(DenseMatrix<std::string> *&res, struct File *file, size_t numRows, size_t numCols, char delim) {
+        if (file == nullptr)
+            throw std::runtime_error("ReadCsvFile: requires a file to be specified (must not be nullptr)");
+        if (numRows <= 0)
+            throw std::runtime_error("ReadCsvFile: numRows must be > 0");
+        if (numCols <= 0)
+            throw std::runtime_error("ReadCsvFile: numCols must be > 0");
+
+        if (res == nullptr) {
+            res = DataObjectFactory::create<DenseMatrix<std::string>>(numRows, numCols, false);
+        }
+
+        size_t cell = 0;
+        std::string *valuesRes = res->getValues();
+
+        for (size_t r = 0; r < numRows; r++) {
+            if (getFileLine(file) == -1)
+                throw std::runtime_error("ReadCsvFile::apply: getFileLine failed");
+
+            size_t pos = 0;
+            for (size_t c = 0; c < numCols; c++) {
+                std::string val("");
+                pos = setCString(file, pos, &val, delim) + 1;
+                // TODO This assumes that rowSkip == numCols.
+                valuesRes[cell++] = val;
+            }
+        }
+    }
+};
+
+template <> struct ReadCsvFile<DenseMatrix<FixedStr16>> {
+    static void apply(DenseMatrix<FixedStr16> *&res, struct File *file, size_t numRows, size_t numCols, char delim) {
+        if (file == nullptr)
+            throw std::runtime_error("ReadCsvFile: requires a file to be specified (must not be nullptr)");
+        if (numRows <= 0)
+            throw std::runtime_error("ReadCsvFile: numRows must be > 0");
+        if (numCols <= 0)
+            throw std::runtime_error("ReadCsvFile: numCols must be > 0");
+
+        if (res == nullptr) {
+            res = DataObjectFactory::create<DenseMatrix<FixedStr16>>(numRows, numCols, false);
+        }
+
+        size_t cell = 0;
+        FixedStr16 *valuesRes = res->getValues();
+
+        for (size_t r = 0; r < numRows; r++) {
+            if (getFileLine(file) == -1)
+                throw std::runtime_error("ReadCsvFile::apply: getFileLine failed");
+
+            size_t pos = 0;
+            for (size_t c = 0; c < numCols; c++) {
+                std::string val("");
+                pos = setCString(file, pos, &val, delim) + 1;
+                // TODO This assumes that rowSkip == numCols.
+                valuesRes[cell++].set(val.c_str());
+            }
+        }
+    }
+};
+
 // ----------------------------------------------------------------------------
 // CSRMatrix
 // ----------------------------------------------------------------------------
 
 template <typename VT> struct ReadCsvFile<CSRMatrix<VT>> {
-    static void apply(CSRMatrix<VT> *&res, struct File *file, size_t numRows,
-                      size_t numCols, char delim, ssize_t numNonZeros,
-                      bool sorted = true) {
+    static void apply(CSRMatrix<VT> *&res, struct File *file, size_t numRows, size_t numCols, char delim,
+                      ssize_t numNonZeros, bool sorted = true) {
         if (numNonZeros == -1)
-            throw std::runtime_error(
-                "ReadCsvFile: Currently, reading of sparse matrices requires a "
-                "number of non zeros to be defined");
+            throw std::runtime_error("ReadCsvFile: Currently, reading of sparse matrices requires a "
+                                     "number of non zeros to be defined");
 
         if (res == nullptr)
-            res = DataObjectFactory::create<CSRMatrix<VT>>(numRows, numCols,
-                                                           numNonZeros, false);
+            res = DataObjectFactory::create<CSRMatrix<VT>>(numRows, numCols, numNonZeros, false);
 
         // TODO/FIXME: file format should be inferred from file extension or
         // specified by user
         if (sorted) {
-            readCOOSorted(res, file, numRows, numCols,
-                          static_cast<size_t>(numNonZeros), delim);
+            readCOOSorted(res, file, numRows, numCols, static_cast<size_t>(numNonZeros), delim);
         } else {
             // this internally sorts, so it might be worth considering just
             // directly sorting the dense matrix Read file of COO format
             DenseMatrix<uint64_t> *rowColumnPairs = nullptr;
-            readCsvFile(rowColumnPairs, file, static_cast<size_t>(numNonZeros),
-                        2, delim);
-            readCOOUnsorted(res, rowColumnPairs, numRows, numCols,
-                            static_cast<size_t>(numNonZeros));
+            readCsvFile(rowColumnPairs, file, static_cast<size_t>(numNonZeros), 2, delim);
+            readCOOUnsorted(res, rowColumnPairs, numRows, numCols, static_cast<size_t>(numNonZeros));
             DataObjectFactory::destroy(rowColumnPairs);
         }
     }
 
   private:
-    static void readCOOSorted(CSRMatrix<VT> *&res, File *file, size_t numRows,
-                              [[maybe_unused]] size_t numCols,
+    static void readCOOSorted(CSRMatrix<VT> *&res, File *file, size_t numRows, [[maybe_unused]] size_t numCols,
                               size_t numNonZeros, char delim) {
         auto *rowOffsets = res->getRowOffsets();
         // we first write number of non zeros for each row and then compute the
@@ -182,8 +228,7 @@ template <typename VT> struct ReadCsvFile<CSRMatrix<VT>> {
         uint64_t col;
         for (size_t i = 0; i < numNonZeros; ++i) {
             if (getFileLine(file) == -1)
-                throw std::runtime_error(
-                    "ReadCOOSorted::apply: getFileLine failed");
+                throw std::runtime_error("ReadCOOSorted::apply: getFileLine failed");
             convertCstr(file->line, &row);
             pos = 0;
             while (file->line[pos] != delim)
@@ -202,17 +247,13 @@ template <typename VT> struct ReadCsvFile<CSRMatrix<VT>> {
         }
     }
 
-    static void readCOOUnsorted(CSRMatrix<VT> *&res,
-                                DenseMatrix<uint64_t> *rowColumnPairs,
-                                size_t numRows, size_t numCols,
-                                size_t numNonZeros) {
+    static void readCOOUnsorted(CSRMatrix<VT> *&res, DenseMatrix<uint64_t> *rowColumnPairs, size_t numRows,
+                                size_t numCols, size_t numNonZeros) {
         // pairs are ordered by first then by second argument (row, then col)
         using RowColPos = std::pair<size_t, size_t>;
-        std::priority_queue<RowColPos, std::vector<RowColPos>, std::greater<>>
-            positions;
+        std::priority_queue<RowColPos, std::vector<RowColPos>, std::greater<>> positions;
         for (auto r = 0u; r < rowColumnPairs->getNumRows(); ++r) {
-            positions.emplace(rowColumnPairs->get(r, 0),
-                              rowColumnPairs->get(r, 1));
+            positions.emplace(rowColumnPairs->get(r, 0), rowColumnPairs->get(r, 1));
         }
 
         auto *rowOffsets = res->getRowOffsets();
@@ -223,13 +264,10 @@ template <typename VT> struct ReadCsvFile<CSRMatrix<VT>> {
         size_t rowIdx = 0;
         while (!positions.empty()) {
             auto pos = positions.top();
-            if (pos.first >= res->getNumRows() ||
-                pos.second >= res->getNumCols()) {
-                throw std::runtime_error(
-                    "Position [" + std::to_string(pos.first) + ", " +
-                    std::to_string(pos.second) + "] is not part of matrix<" +
-                    std::to_string(res->getNumRows()) + ", " +
-                    std::to_string(res->getNumCols()) + ">");
+            if (pos.first >= res->getNumRows() || pos.second >= res->getNumCols()) {
+                throw std::runtime_error("Position [" + std::to_string(pos.first) + ", " + std::to_string(pos.second) +
+                                         "] is not part of matrix<" + std::to_string(res->getNumRows()) + ", " +
+                                         std::to_string(res->getNumCols()) + ">");
             }
             while (rowIdx < pos.first) {
                 rowOffsets[rowIdx + 1] = currValIdx;
@@ -253,16 +291,15 @@ template <typename VT> struct ReadCsvFile<CSRMatrix<VT>> {
 // ----------------------------------------------------------------------------
 
 template <> struct ReadCsvFile<Frame> {
-    static void apply(Frame *&res, struct File *file, size_t numRows,
-                      size_t numCols, char delim, ValueTypeCode *schema) {
+    static void apply(Frame *&res, struct File *file, size_t numRows, size_t numCols, char delim,
+                      ValueTypeCode *schema) {
         if (numRows <= 0)
             throw std::runtime_error("ReadCsvFile: numRows must be > 0");
         if (numCols <= 0)
             throw std::runtime_error("ReadCsvFile: numCols must be > 0");
 
         if (res == nullptr) {
-            res = DataObjectFactory::create<Frame>(numRows, numCols, schema,
-                                                   nullptr, false);
+            res = DataObjectFactory::create<Frame>(numRows, numCols, schema, nullptr, false);
         }
 
         size_t row = 0, col = 0;
@@ -281,8 +318,7 @@ template <> struct ReadCsvFile<Frame> {
             if (file->line == NULL)
                 break;
             if (ret == -1)
-                throw std::runtime_error(
-                    "ReadCsvFile::apply: getFileLine failed");
+                throw std::runtime_error("ReadCsvFile::apply: getFileLine failed");
 
             size_t pos = 0;
             while (1) {
@@ -327,9 +363,20 @@ template <> struct ReadCsvFile<Frame> {
                     convertCstr(file->line + pos, &val_f64);
                     reinterpret_cast<double *>(rawCols[col])[row] = val_f64;
                     break;
+                case ValueTypeCode::STR: {
+                    std::string val_str = "";
+                    pos = setCString(file, pos, &val_str, delim);
+                    reinterpret_cast<std::string *>(rawCols[col])[row] = val_str;
+                    break;
+                }
+                case ValueTypeCode::FIXEDSTR16: {
+                    std::string val_str = "";
+                    pos = setCString(file, pos, &val_str, delim);
+                    reinterpret_cast<FixedStr16 *>(rawCols[col])[row] = FixedStr16(val_str);
+                    break;
+                }
                 default:
-                    throw std::runtime_error(
-                        "ReadCsvFile::apply: unknown value type code");
+                    throw std::runtime_error("ReadCsvFile::apply: unknown value type code");
                 }
 
                 if (++col >= numCols) {

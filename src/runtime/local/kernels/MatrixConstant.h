@@ -34,8 +34,7 @@ template <class DTRes> struct MatrixConstant {
 // Convenience function
 // ****************************************************************************
 
-template <class DTRes>
-void matrixConstant(DTRes *&res, uint64_t matrixAddr, DCTX(ctx)) {
+template <class DTRes> void matrixConstant(DTRes *&res, uint64_t matrixAddr, DCTX(ctx)) {
     MatrixConstant<DTRes>::apply(res, matrixAddr, ctx);
 }
 
@@ -68,13 +67,12 @@ template <typename VT> struct MatrixConstant<DenseMatrix<VT>> {
         const size_t numCols = orig->getNumCols();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols,
-                                                             false);
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numCols, false);
 
         const VT *valuesOrig = orig->getValues();
         VT *valuesRes = res->getValues();
 
-        memcpy(valuesRes, valuesOrig, numRows * numCols * sizeof(VT));
+        std::copy(valuesOrig, valuesOrig + numRows * numCols, valuesRes);
     }
 };
 #endif // SRC_RUNTIME_LOCAL_KERNELS_MATRIXCONSTANT_H

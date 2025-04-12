@@ -19,19 +19,19 @@
 #include "DataPlacement.h"
 #include "runtime/local/context/CUDAContext.h"
 #include <cstdint>
+#include <mlir/IR/Attributes.h>
 
 class AllocationDescriptorCUDA : public IAllocationDescriptor {
     ALLOCATION_TYPE type = ALLOCATION_TYPE::GPU_CUDA;
     uint32_t device_id{};
     DaphneContext *dctx{};
-    std::shared_ptr<std::byte> data{};
+    std::shared_ptr<std::byte> data;
     size_t alloc_id{};
 
   public:
     AllocationDescriptorCUDA() = delete;
 
-    AllocationDescriptorCUDA(DaphneContext *ctx, uint32_t device_id)
-        : device_id(device_id), dctx(ctx) {}
+    AllocationDescriptorCUDA(DaphneContext *ctx, uint32_t device_id) : device_id(device_id), dctx(ctx) {}
 
     ~AllocationDescriptorCUDA() override {
         // ToDo: for now we free if this is the last context-external ref to the
@@ -44,34 +44,32 @@ class AllocationDescriptorCUDA : public IAllocationDescriptor {
     [[nodiscard]] ALLOCATION_TYPE getType() const override { return type; }
 
     // [[nodiscard]] uint32_t getLocation() const { return device_id; }
-    [[nodiscard]] std::string getLocation() const override {
-        return std::to_string(device_id);
-    }
+    [[nodiscard]] std::string getLocation() const override { return std::to_string(device_id); }
 
     void createAllocation(size_t size, bool zero) override {
-        auto ctx = CUDAContext::get(dctx, device_id);
+        auto *ctx = CUDAContext::get(dctx, device_id);
         data = ctx->malloc(size, zero, alloc_id);
     }
 
     std::shared_ptr<std::byte> getData() override { return data; }
 
-    [[nodiscard]] std::unique_ptr<IAllocationDescriptor>
-    clone() const override {
+    [[nodiscard]] std::unique_ptr<IAllocationDescriptor> clone() const override {
         return std::make_unique<AllocationDescriptorCUDA>(*this);
     }
 
     void transferTo(std::byte *src, size_t size) override {
+        if (!src)
+            throw std::runtime_error("src ptr requested for transfer to device is null");
         CHECK_CUDART(cudaMemcpy(data.get(), src, size, cudaMemcpyHostToDevice));
     }
+
     void transferFrom(std::byte *dst, size_t size) override {
         CHECK_CUDART(cudaMemcpy(dst, data.get(), size, cudaMemcpyDeviceToHost));
     };
 
     bool operator==(const IAllocationDescriptor *other) const override {
         if (getType() == other->getType())
-            return (getLocation() ==
-                    dynamic_cast<const AllocationDescriptorCUDA *>(other)
-                        ->getLocation());
+            return (getLocation() == dynamic_cast<const AllocationDescriptorCUDA *>(other)->getLocation());
         return false;
     }
 };

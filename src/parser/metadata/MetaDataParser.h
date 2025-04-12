@@ -32,7 +32,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ValueTypeCode, {{ValueTypeCode::INVALID, nullptr},
                                              {ValueTypeCode::UI32, "ui32"},
                                              {ValueTypeCode::UI64, "ui64"},
                                              {ValueTypeCode::F32, "f32"},
-                                             {ValueTypeCode::F64, "f64"}})
+                                             {ValueTypeCode::F64, "f64"},
+                                             {ValueTypeCode::STR, "str"}})
 
 /**
  * @brief A JSON representation of a schema column needed to
@@ -44,9 +45,7 @@ class SchemaColumn {
     [[nodiscard]] const std::string &getLabel() const { return label; }
     [[nodiscard]] ValueTypeCode getValueType() const { return valueType; }
     void setLabel(const std::string &label_) { this->label = label_; }
-    void setValueType(ValueTypeCode valueType_) {
-        this->valueType = valueType_;
-    }
+    void setValueType(ValueTypeCode valueType_) { this->valueType = valueType_; }
 
   private:
     std::string label;
@@ -77,8 +76,7 @@ class MetaDataParser {
      * @throws std::runtime_error Thrown if the specified file could not be
      * openn.
      */
-    static void writeMetaData(const std::string &filename,
-                              const FileMetaData &metaData);
+    static void writeMetaData(const std::string &filename, const FileMetaData &metaData);
     static std::string writeMetaDataToString(const FileMetaData &metaData);
 
   private:

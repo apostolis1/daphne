@@ -74,20 +74,21 @@ struct DaphneUserConfig {
     bool explain_vectorized = false;
     bool explain_obj_ref_mgnt = false;
     bool explain_mlir_codegen = false;
-    bool statistics = false;
+    bool explain_mlir_codegen_sparsity_exploiting_op_fusion = false;
+    bool explain_mlir_codegen_daphneir_to_mlir = false;
+    bool explain_mlir_codegen_mlir_specific = false;
+    bool enable_statistics = false;
 
     bool force_cuda = false;
 
-    SelfSchedulingScheme taskPartitioningScheme = STATIC;
-    QueueTypeOption queueSetupScheme = CENTRALIZED;
-    VictimSelectionLogic victimSelection = SEQPRI;
-    ALLOCATION_TYPE distributedBackEndSetup =
-        ALLOCATION_TYPE::DIST_MPI; // default value
+    SelfSchedulingScheme taskPartitioningScheme = SelfSchedulingScheme::STATIC;
+    QueueTypeOption queueSetupScheme = QueueTypeOption::CENTRALIZED;
+    VictimSelectionLogic victimSelection = VictimSelectionLogic::SEQPRI;
+    ALLOCATION_TYPE distributedBackEndSetup = ALLOCATION_TYPE::DIST_MPI; // default value
     size_t max_distributed_serialization_chunk_size =
-        std::numeric_limits<int>::max() -
-        1024; // 2GB (-1KB to make up for gRPC headers etc.) - which is the
-              // maximum size allowed by gRPC / MPI. TODO: Investigate what
-              // might be the optimal.
+        std::numeric_limits<int>::max() - 1024; // 2GB (-1KB to make up for gRPC headers etc.) - which is the
+                                                // maximum size allowed by gRPC / MPI. TODO: Investigate what
+                                                // might be the optimal.
     int numberOfThreads = -1;
     int minimumTaskSize = 1;
 
@@ -145,8 +146,7 @@ struct DaphneUserConfig {
         const std::string exedirPlaceholder = "{exedir}/";
         if (libdir.substr(0, exedirPlaceholder.size()) == exedirPlaceholder) {
             // This next line adds to our Linux platform lock-in.
-            std::filesystem::path daphneExeDir(
-                std::filesystem::canonical("/proc/self/exe").parent_path());
+            std::filesystem::path daphneExeDir(std::filesystem::canonical("/proc/self/exe").parent_path());
             libdir = daphneExeDir / libdir.substr(exedirPlaceholder.size());
         }
     }

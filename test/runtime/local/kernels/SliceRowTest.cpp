@@ -29,8 +29,7 @@
 
 #include <cstdint>
 
-TEMPLATE_PRODUCT_TEST_CASE("SliceRow", TAG_KERNELS, (DenseMatrix, Matrix),
-                           (double, int64_t, uint32_t)) {
+TEMPLATE_PRODUCT_TEST_CASE("SliceRow", TAG_KERNELS, (DenseMatrix, Matrix), (double, int64_t, uint32_t)) {
     using DT = TestType;
 
     std::vector<typename DT::VT> vals = {
@@ -48,29 +47,42 @@ TEMPLATE_PRODUCT_TEST_CASE("SliceRow", TAG_KERNELS, (DenseMatrix, Matrix),
     DataObjectFactory::destroy(arg, exp, res);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("SliceRow - check throws", TAG_KERNELS,
-                           (DenseMatrix, Matrix), (double, int64_t)) {
+TEMPLATE_PRODUCT_TEST_CASE("SliceRow - string specific", TAG_KERNELS, (DenseMatrix, Matrix), (ALL_STRING_VALUE_TYPES)) {
+    using DT = TestType;
+    using VT = typename DT::VT;
+
+    std::vector<VT> vals = {VT("a"), VT(""),  VT("1"),  VT("abc"), VT("e"),   VT("j"),    VT("abc"), VT("abcd"),
+                            VT(" "), VT("a"), VT("f"),  VT("k"),   VT("ABC"), VT("34ab"), VT("ac"),  VT("b"),
+                            VT("g"), VT("l"), VT("cd"), VT(" "),   VT("ad"),  VT("c"),    VT("h"),   VT(" ")};
+    std::vector<VT> valsExp = {VT("abc"), VT("abcd"), VT(" "),  VT("a"), VT("f"), VT("k"),
+                               VT("ABC"), VT("34ab"), VT("ac"), VT("b"), VT("g"), VT("l")};
+    auto arg = genGivenVals<DT>(4, vals);
+    auto exp = genGivenVals<DT>(2, valsExp);
+    DT *res = nullptr;
+    sliceRow(res, arg, 1, 3, nullptr);
+    CHECK(*res == *exp);
+
+    DataObjectFactory::destroy(arg, exp, res);
+}
+
+TEMPLATE_PRODUCT_TEST_CASE("SliceRow - check throws", TAG_KERNELS, (DenseMatrix, Matrix), (double, int64_t)) {
     using DT = TestType;
     using VT = typename DT::VT;
 
     auto arg = genGivenVals<DT>(4, {
-                                       0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0,
-                                       3, 4, 5, 0, 6, 7, 0, 8, 0, 0, 9, 0,
+                                       0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 4, 5, 0, 6, 7, 0, 8, 0, 0, 9, 0,
                                    });
 
     DT *res = nullptr;
 
     SECTION("lowerIncl out of bounds - negative") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, -0.1, 3.0, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, -0.1, 3.0, nullptr)), std::out_of_range);
     }
     SECTION("lowerIncl greater than upperExcl") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, 3, 2, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, 3, 2, nullptr)), std::out_of_range);
     }
     SECTION("upperExcl out of bounds - too high") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, VT(1), VT(5.5), nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, VT(1), VT(5.5), nullptr)), std::out_of_range);
     }
 
     DataObjectFactory::destroy(arg);
@@ -112,20 +124,16 @@ TEMPLATE_TEST_CASE("SliceRow - check throws", TAG_KERNELS, (Frame)) {
     DT *res = nullptr;
 
     SECTION("lowerIncl out of bounds - negative") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, -0.1, 3.0, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, -0.1, 3.0, nullptr)), std::out_of_range);
     }
     SECTION("lowerIncl greater than upperExcl") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, 3, 2, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, 3, 2, nullptr)), std::out_of_range);
     }
     SECTION("upperExcl out of bounds - too high") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, 1, 5, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, 1, 5, nullptr)), std::out_of_range);
     }
     SECTION("upperExcl out of bounds - too high FP") {
-        REQUIRE_THROWS_AS((sliceRow(res, arg, 1.0, 5.1, nullptr)),
-                          std::out_of_range);
+        REQUIRE_THROWS_AS((sliceRow(res, arg, 1.0, 5.1, nullptr)), std::out_of_range);
     }
 
     DataObjectFactory::destroy(arg);

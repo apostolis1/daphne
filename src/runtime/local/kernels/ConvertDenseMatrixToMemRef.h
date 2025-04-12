@@ -17,11 +17,11 @@
 #pragma once
 
 #include "mlir/ExecutionEngine/CRunnerUtils.h"
+#include "runtime/local/context/DaphneContext.h"
 #include "runtime/local/datastructures/DenseMatrix.h"
 
 template <typename T>
-inline StridedMemRefType<T, 2>
-convertDenseMatrixToMemRef(const DenseMatrix<T> *input, DCTX(ctx)) {
+inline StridedMemRefType<T, 2> convertDenseMatrixToMemRef(const DenseMatrix<T> *input, DCTX(ctx)) {
     StridedMemRefType<T, 2> memRef{};
     memRef.basePtr = input->getValuesSharedPtr().get();
     memRef.data = memRef.basePtr;

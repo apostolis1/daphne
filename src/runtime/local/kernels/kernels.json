@@ -128,6 +128,10 @@
                         ["DenseMatrix", "int64_t"]
                     ],
                     [
+                        ["DenseMatrix", "uint64_t"],
+                        ["DenseMatrix", "uint64_t"]
+                    ],
+                    [
                         ["DenseMatrix", "double"],
                         ["DenseMatrix", "int64_t"]
                     ],
@@ -146,6 +150,10 @@
                     [
                         ["DenseMatrix", "size_t"],
                         ["DenseMatrix", "int64_t"]
+                    ],
+                    [
+                        ["DenseMatrix", "size_t"],
+                        ["DenseMatrix", "uint64_t"]
                     ],
                     [
                         ["DenseMatrix", "double"],
@@ -292,6 +300,10 @@
                         ["DenseMatrix", "int64_t"]
                     ],
                     [
+                        ["DenseMatrix", "uint64_t"],
+                        ["DenseMatrix", "uint64_t"]
+                    ],
+                    [
                         ["DenseMatrix", "float"],
                         ["DenseMatrix", "int64_t"]
                     ],
@@ -314,6 +326,10 @@
                     [
                         ["DenseMatrix", "size_t"],
                         ["DenseMatrix", "int64_t"]
+                    ],
+                    [
+                        ["DenseMatrix", "size_t"],
+                        ["DenseMatrix", "uint64_t"]
                     ],
 
                     [
@@ -403,6 +419,7 @@
             [["DenseMatrix", "double"], "Frame"],
             [["DenseMatrix", "int64_t"], "Frame"],
             [["DenseMatrix", "uint64_t"], "Frame"],
+            [["DenseMatrix", "std::string"], "Frame"],
             ["Frame", ["DenseMatrix", "double"]],
             ["Frame", ["DenseMatrix", "int64_t"]],
             ["Frame", ["DenseMatrix", "uint64_t"]],
@@ -443,6 +460,10 @@
                 ["DenseMatrix", "double"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "double"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "float"],
@@ -480,6 +501,10 @@
                 ["DenseMatrix", "float"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "float"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "int64_t"],
@@ -517,6 +542,10 @@
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "int64_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "int32_t"],
@@ -554,6 +583,10 @@
                 ["DenseMatrix", "int32_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "int32_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "int8_t"],
@@ -591,6 +624,10 @@
                 ["DenseMatrix", "int8_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "int8_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "uint64_t"],
@@ -628,6 +665,10 @@
                 ["DenseMatrix", "uint64_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "uint64_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "uint32_t"],
@@ -665,6 +706,10 @@
                 ["DenseMatrix", "uint32_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "uint32_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "uint8_t"],
@@ -702,6 +747,10 @@
                 ["DenseMatrix", "uint8_t"],
                 ["DenseMatrix", "size_t"]
             ],
+            [
+                ["DenseMatrix", "uint8_t"],
+                ["DenseMatrix", "std::string"]
+            ],
 
             [
                 ["DenseMatrix", "size_t"],
@@ -737,6 +786,47 @@
             ],
             [
                 ["DenseMatrix", "size_t"],
+                ["DenseMatrix", "size_t"]
+            ],
+            [
+                ["DenseMatrix", "size_t"],
+                ["DenseMatrix", "std::string"]
+            ],
+
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "double"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "float"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "int64_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "int32_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "int8_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "uint64_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "uint32_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "uint8_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
                 ["DenseMatrix", "size_t"]
             ],
 
@@ -752,6 +842,7 @@
                 ["DenseMatrix", "int64_t"],
                 ["CSRMatrix", "int64_t"]
             ],
+
             [
                 ["CSRMatrix", "double"],
                 ["DenseMatrix", "double"]
@@ -764,6 +855,7 @@
                 ["CSRMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"]
             ],
+
             [
                 ["CSRMatrix", "double"],
                 ["CSRMatrix", "float"]
@@ -1411,6 +1503,7 @@
             ["int64_t"],
             ["int32_t"],
             ["int8_t"],
+            ["size_t"],
             ["uint64_t"],
             ["uint32_t"],
             ["uint8_t"],
@@ -1432,6 +1525,93 @@
             "runtimeParams": [
                 {
                     "type": "DenseMatrix<VT> *",
+                    "name": "input"
+                }
+            ]
+        },
+        "instantiations": [
+            ["int64_t"],
+            ["int32_t"],
+            ["int8_t"],
+            ["uint64_t"],
+            ["uint32_t"],
+            ["uint8_t"],
+            ["float"],
+            ["double"]
+        ]
+    },
+    {
+        "kernelTemplate": {
+            "header": "ConvertCSRMatrixToValuesMemRef.h",
+            "opName": "convertCSRMatrixToValuesMemRef",
+            "returnType": "StridedMemRefType<VT,1>",
+            "templateParams": [
+                {
+                    "name": "VT",
+                    "isDataType": false
+                }
+            ],
+            "runtimeParams": [
+                {
+                    "type": "CSRMatrix<VT> *",
+                    "name": "input"
+                }
+            ]
+        },
+        "instantiations": [
+            ["int64_t"],
+            ["int32_t"],
+            ["int8_t"],
+            ["uint64_t"],
+            ["uint32_t"],
+            ["uint8_t"],
+            ["float"],
+            ["double"]
+        ]
+    },
+    {
+        "kernelTemplate": {
+            "header": "ConvertCSRMatrixToColIdxsMemRef.h",
+            "opName": "convertCSRMatrixToColIdxsMemRef",
+            "returnType": "StridedMemRefType<size_t,1>",
+            "templateParams": [
+                {
+                    "name": "VT",
+                    "isDataType": false
+                }
+            ],
+            "runtimeParams": [
+                {
+                    "type": "CSRMatrix<VT> *",
+                    "name": "input"
+                }
+            ]
+        },
+        "instantiations": [
+            ["int64_t"],
+            ["int32_t"],
+            ["int8_t"],
+            ["uint64_t"],
+            ["uint32_t"],
+            ["uint8_t"],
+            ["float"],
+            ["double"]
+        ]
+    },
+    {
+        "kernelTemplate": {
+            "header": "ConvertCSRMatrixToRowOffsetsMemRef.h",
+            "opName": "convertCSRMatrixToRowOffsetsMemRef",
+            "returnType": "StridedMemRefType<size_t,1>",
+            "templateParams": [
+                {
+                    "name": "VT",
+                    "isDataType": false
+                }
+            ],
+            "runtimeParams": [
+                {
+                    "type": "CSRMatrix<VT> *",
                     "name": "input"
                 }
             ]
@@ -1878,6 +2058,16 @@
                         ["CSRMatrix", "float"],
                         ["CSRMatrix", "float"],
                         ["CSRMatrix", "float"]
+                    ],
+                    [
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"]
+                    ],
+                    [
+                        ["DenseMatrix", "int64_t"],
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"]
                     ]
                 ],
                 "opCodes": [
@@ -1897,7 +2087,8 @@
                     "MIN",
                     "MAX",
                     "AND",
-                    "OR"
+                    "OR",
+                    "CONCAT"
                 ]
             }
         ]
@@ -2001,7 +2192,17 @@
                 "instantiations": [
                     ["Frame", "Frame", "float"],
                     ["Frame", "Frame", "double"],
-                    ["Frame", "Frame", "int64_t"]
+                    ["Frame", "Frame", "int64_t"],
+                    [
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"],
+                        "const char *"
+                    ],
+                    [
+                        ["DenseMatrix", "int64_t"],
+                        ["DenseMatrix", "std::string"],
+                        "const char *"
+                    ]
                 ],
                 "opCodes": [
                     "ADD",
@@ -2021,7 +2222,8 @@
                     "MAX",
                     "AND",
                     "OR",
-                    "BITWISE_AND"
+                    "BITWISE_AND",
+                    "CONCAT"
                 ]
             }
         ]
@@ -2066,6 +2268,7 @@
             ["int64_t", "int64_t", "int64_t"],
             ["uint64_t", "uint64_t", "uint64_t"],
             ["uint32_t", "uint32_t", "uint32_t"],
+            ["bool", "bool", "bool"],
             ["size_t", "size_t", "size_t"],
             ["const char *", "const char *", "const char *"],
             ["int64_t", "const char *", "const char *"]
@@ -2556,7 +2759,12 @@
                 "instantiations": [
                     ["Frame", "Frame", "char"],
                     ["Frame", "Frame", ["DenseMatrix", "int64_t"]],
-                    ["Frame", "Frame", ["DenseMatrix", "size_t"]]
+                    ["Frame", "Frame", ["DenseMatrix", "size_t"]],
+                    [
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "int64_t"]
+                    ]
                 ]
             }
         ]
@@ -2606,6 +2814,12 @@
                     [["DenseMatrix", "uint8_t"], "uint8_t"],
                     [["DenseMatrix", "bool"], "bool"]
                 ]
+            },
+            {
+                "name": ["CPP"],
+                "instantiations": [
+                    [["DenseMatrix", "std::string"], "const char *"]
+                ]
             }
         ]
     },
@@ -2641,7 +2855,8 @@
             [["DenseMatrix", "uint64_t"]],
             [["DenseMatrix", "uint32_t"]],
             [["DenseMatrix", "uint8_t"]],
-            [["DenseMatrix", "bool"]]
+            [["DenseMatrix", "bool"]],
+            [["DenseMatrix", "std::string"]]
         ]
     },
     {
@@ -2685,6 +2900,7 @@
             [["DenseMatrix", "float"], ["DenseMatrix", "float"], "size_t"],
             [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "int64_t"],
             [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "size_t"],
+            [["DenseMatrix", "std::string"], ["DenseMatrix", "std::string"], "int64_t"],
             ["Frame", "Frame", "int64_t"],
             ["Frame", "Frame", "size_t"]
         ]
@@ -2851,7 +3067,11 @@
                 {
                     "type": "const char *",
                     "name": "rhsOn"
-                }
+                },
+                {
+                    "type": "int64_t",
+                    "name": "numRowRes"
+                }   
             ]
         },
         "instantiations": [[]]
@@ -3370,6 +3590,10 @@
             [
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"]
+            ],
+            [
+                ["DenseMatrix", "int64_t"],
+                ["DenseMatrix", "std::string"]
             ]
         ]
     },
@@ -3426,6 +3650,11 @@
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"]
+            ],
+            [
+                ["DenseMatrix", "int64_t"],
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"]
             ]
         ]
     },
@@ -3558,6 +3787,7 @@
             [["DenseMatrix", "uint8_t"]],
             [["DenseMatrix", "bool"]],
             [["DenseMatrix", "size_t"]],
+            [["DenseMatrix", "std::string"]],
             [["CSRMatrix", "double"]],
             [["CSRMatrix", "float"]],
             [["CSRMatrix", "int64_t"]],
@@ -3718,6 +3948,10 @@
             [
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"]
             ]
         ]
     },
@@ -3748,6 +3982,7 @@
             [["DenseMatrix", "double"]],
             [["DenseMatrix", "int64_t"]],
             [["DenseMatrix", "uint8_t"]],
+            [["DenseMatrix", "std::string"]],
             [["CSRMatrix", "double"]],
             [["CSRMatrix", "float"]],
             ["Frame"]
@@ -3799,6 +4034,7 @@
             [["DenseMatrix", "double"]],
             [["DenseMatrix", "int64_t"]],
             [["DenseMatrix", "uint8_t"]],
+            [["DenseMatrix", "std::string"]],
             ["Frame"]
         ]
     },
@@ -3946,12 +4182,8 @@
                     "name": "res"
                 },
                 {
-                    "type": "uint32_t",
-                    "name": "upper"
-                },
-                {
-                    "type": "uint32_t",
-                    "name": "lower"
+                    "type": "uint64_t",
+                    "name": "address"
                 },
                 {
                     "type": "int64_t",
@@ -4087,6 +4319,10 @@
             [
                 ["DenseMatrix", "bool"],
                 ["DenseMatrix", "bool"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"]
             ]
         ]
     },
@@ -4125,6 +4361,10 @@
                 {
                     "type": "const char *",
                     "name": "rhsOn"
+                },
+                {
+                    "type": "int64_t",
+                    "name": "numRowRes"
                 }
             ]
         },
@@ -4242,6 +4482,10 @@
                     [
                         ["CSRMatrix", "int64_t"],
                         ["CSRMatrix", "int64_t"]
+                    ],
+                    [
+                        ["DenseMatrix", "std::string"],
+                        ["DenseMatrix", "std::string"]
                     ]
                 ]
             }
@@ -4285,6 +4529,10 @@
             [
                 ["DenseMatrix", "int64_t"],
                 ["DenseMatrix", "int64_t"]
+            ],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"]
             ]
         ],
         "opCodes": [
@@ -4306,7 +4554,9 @@
             "SINH",
             "COSH",
             "TANH",
-            "ISNAN"
+            "ISNAN",
+            "LOWER",
+            "UPPER"
         ]
     },
     {
@@ -4338,7 +4588,8 @@
         "instantiations": [
             ["double", "double"],
             ["float", "float"],
-            ["int64_t", "int64_t"]
+            ["int64_t", "int64_t"],
+            ["const char *", "const char *"]
         ],
         "opCodes": [
             "MINUS",
@@ -4359,7 +4610,9 @@
             "SINH",
             "COSH",
             "TANH",
-            "ISNAN"
+            "ISNAN",
+            "LOWER",
+            "UPPER"
         ]
     },
     {
@@ -4838,6 +5091,8 @@
             [["DenseMatrix", "double"], ["DenseMatrix", "double"], "int64_t"],
             [["DenseMatrix", "float"], ["DenseMatrix", "float"], "int64_t"],
             [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "int64_t"],
+            [["DenseMatrix", "uint64_t"], ["DenseMatrix", "uint64_t"], "int64_t"],
+            [["DenseMatrix", "std::string"], ["DenseMatrix", "std::string"], "int64_t"],
             ["Frame", "Frame", "int64_t"]
         ]
     },
@@ -4884,6 +5139,8 @@
             [["DenseMatrix", "double"], ["DenseMatrix", "double"], "int64_t"],
             [["DenseMatrix", "float"], ["DenseMatrix", "float"], "int64_t"],
             [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "int64_t"],
+            [["DenseMatrix", "uint64_t"], ["DenseMatrix", "uint64_t"], "int64_t"],
+            [["DenseMatrix", "std::string"], ["DenseMatrix", "std::string"], "int64_t"],
             ["Frame", "Frame", "int64_t"]
         ]
     },
@@ -4946,7 +5203,12 @@
                 "int64_t"
             ],
             [["DenseMatrix", "uint8_t"], ["DenseMatrix", "uint8_t"], "int64_t"],
-            [["DenseMatrix", "bool"], ["DenseMatrix", "bool"], "int64_t"]
+            [["DenseMatrix", "bool"], ["DenseMatrix", "bool"], "int64_t"],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"],
+                "int64_t"
+            ]
         ]
     },
     {
@@ -4994,7 +5256,12 @@
         "instantiations": [
             [["DenseMatrix", "double"], ["DenseMatrix", "double"], "int64_t"],
             [["DenseMatrix", "float"], ["DenseMatrix", "float"], "int64_t"],
-            [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "int64_t"]
+            [["DenseMatrix", "int64_t"], ["DenseMatrix", "int64_t"], "int64_t"],
+            [
+                ["DenseMatrix", "std::string"],
+                ["DenseMatrix", "std::string"],
+                "int64_t"
+            ]
         ]
     },
     {
@@ -5252,7 +5519,7 @@
     {
         "kernelTemplate": {
             "header": "BatchNorm.h",
-            "opName": "BatchNorm::Forward",
+            "opName": "BatchNormInferenceForward",
             "returnType": "void",
             "opCodeAsTemplateParam": 1,
             "templateParams": [
@@ -5334,12 +5601,14 @@
                     "name": "res"
                 },
                 {
-                    "type": "size_t&",
-                    "name": "res_h"
+                    "type": "size_t *",
+                    "name": "res_h",
+                    "isReturnValue": true
                 },
                 {
-                    "type": "size_t&",
-                    "name": "res_w"
+                    "type": "size_t *",
+                    "name": "res_w",
+                    "isReturnValue": true
                 },
                 {
                     "type": "const DTArg *",
@@ -5414,7 +5683,7 @@
     {
         "kernelTemplate": {
             "header": "Softmax.h",
-            "opName": "Softmax::Forward",
+            "opName": "Softmax",
             "returnType": "void",
             "opCodeAsTemplateParam": 1,
             "templateParams": [
@@ -5457,7 +5726,7 @@
     {
         "kernelTemplate": {
             "header": "BiasAdd.h",
-            "opName": "BiasAdd::Forward",
+            "opName": "BiasAdd",
             "returnType": "void",
             "opCodeAsTemplateParam": 1,
             "templateParams": [
@@ -5487,7 +5756,7 @@
         },
         "api": [
             {
-                "name": ["CUDA"],
+                "name": ["CPP", "CUDA"],
                 "instantiations": [
                     [
                         ["DenseMatrix", "float"],
@@ -6493,52 +6762,10 @@
             }
         ]
     },
-
-    {
-        "kernelTemplate": {
-            "header": "BiasAddForward.h",
-            "opName": "biasAddForward",
-            "returnType": "void",
-            "templateParams": [
-                {
-                    "name": "DTRes",
-                    "isDataType": true
-                },
-                {
-                    "name": "DTArg",
-                    "isDataType": true
-                }
-            ],
-            "runtimeParams": [
-                {
-                    "type": "DTRes *&",
-                    "name": "res"
-                },
-                {
-                    "type": "const DTArg *",
-                    "name": "input"
-                },
-                {
-                    "type": "const DTArg *",
-                    "name": "bias"
-                }
-            ]
-        },
-        "api": [
-            {
-                "name":  ["CPP"],
-                "instantiations": [
-                    [["DenseMatrix", "float"], ["DenseMatrix", "float"]],
-                    [["DenseMatrix", "double"], ["DenseMatrix", "double"]]
-                ]
-            }
-        ]
-    },
-
     {
         "kernelTemplate": {
             "header": "BatchNorm2DTestForward.h",
-            "opName": "batchNorm2DTestForward",
+            "opName": "batchNorm2DInferenceForward",
             "returnType": "void",
             "templateParams": [
                 {

@@ -22,28 +22,26 @@
 #include <string>
 
 // must be in the same namespace as the enum SelfSchedulingScheme
-NLOHMANN_JSON_SERIALIZE_ENUM(SelfSchedulingScheme, {{INVALID, nullptr},
-                                                    {STATIC, "STATIC"},
-                                                    {SS, "SS"},
-                                                    {GSS, "GSS"},
-                                                    {TSS, "TSS"},
-                                                    {FAC2, "FAC2"},
-                                                    {TFSS, "TFSS"},
-                                                    {FISS, "FISS"},
-                                                    {VISS, "VISS"},
-                                                    {PLS, "PLS"},
-                                                    {MSTATIC, "MSTATIC"},
-                                                    {MFSC, "MFSC"},
-                                                    {PSS, "PSS"}})
+NLOHMANN_JSON_SERIALIZE_ENUM(SelfSchedulingScheme, {{SelfSchedulingScheme::INVALID, nullptr},
+                                                    {SelfSchedulingScheme::STATIC, "STATIC"},
+                                                    {SelfSchedulingScheme::SS, "SS"},
+                                                    {SelfSchedulingScheme::GSS, "GSS"},
+                                                    {SelfSchedulingScheme::TSS, "TSS"},
+                                                    {SelfSchedulingScheme::FAC2, "FAC2"},
+                                                    {SelfSchedulingScheme::TFSS, "TFSS"},
+                                                    {SelfSchedulingScheme::FISS, "FISS"},
+                                                    {SelfSchedulingScheme::VISS, "VISS"},
+                                                    {SelfSchedulingScheme::PLS, "PLS"},
+                                                    {SelfSchedulingScheme::MSTATIC, "MSTATIC"},
+                                                    {SelfSchedulingScheme::MFSC, "MFSC"},
+                                                    {SelfSchedulingScheme::PSS, "PSS"}})
 
 class ConfigParser {
   public:
     static bool fileExists(const std::string &filename);
-    static void readUserConfig(const std::string &filename,
-                               DaphneUserConfig &config);
+    static void readUserConfig(const std::string &filename, DaphneUserConfig &config);
 
   private:
     static bool keyExists(const nlohmann::json &j, const std::string &key);
-    static void checkAnyUnexpectedKeys(const nlohmann::basic_json<> &j,
-                                       const std::string &filename);
+    static void checkAnyUnexpectedKeys(const nlohmann::basic_json<> &j, const std::string &filename);
 };

@@ -29,7 +29,8 @@ class TaskQueue {
     virtual ~TaskQueue() = default;
 
     virtual void enqueueTask(Task *t) = 0;
-    virtual void enqueueTaskPinned(Task *t, int targetCPU) = 0;
+    // overload to pin a Task to a certain CPU
+    virtual void enqueueTask(Task *t, int targetCPU) = 0;
     virtual Task *dequeueTask() = 0;
     virtual uint64_t size() = 0;
     virtual void closeInput() = 0;
@@ -46,62 +47,57 @@ class BlockingTaskQueue : public TaskQueue {
 
   public:
     BlockingTaskQueue() : BlockingTaskQueue(DEFAULT_MAX_SIZE) {}
-    explicit BlockingTaskQueue(uint64_t capacity) {
-        _closedInput = false;
-        _capacity = capacity;
-    }
+    explicit BlockingTaskQueue(uint64_t capacity) : _capacity(capacity), _closedInput(false) {}
     ~BlockingTaskQueue() override = default;
 
     void enqueueTask(Task *t) override {
         // lock mutex, released at end of scope
-        std::unique_lock<std::mutex> ul(_qmutex);
+        std::unique_lock<std::mutex> lk(_qmutex);
         // blocking wait until tasks dequeued
         while (_data.size() + 1 > _capacity)
-            _cv.wait(ul);
+            _cv.wait(lk);
         // add task to end of list
         _data.push_back(t);
+        lk.unlock();
         // notify blocked dequeue operations
         _cv.notify_one();
     }
 
-    void enqueueTaskPinned(Task *t, int targetCPU) override {
+    void enqueueTask(Task *t, int targetCPU) override {
         // Change CPU pinning before enqueue to utilize NUMA first-touch policy
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(targetCPU, &cpuset);
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-        std::unique_lock<std::mutex> ul(_qmutex);
-        while (_data.size() + 1 > _capacity)
-            _cv.wait(ul);
-        _data.push_back(t);
-        _cv.notify_one();
+        enqueueTask(t);
     }
 
     Task *dequeueTask() override {
         // lock mutex, released at end of scope
-        std::unique_lock<std::mutex> ul(_qmutex);
+        std::unique_lock<std::mutex> lk(_qmutex);
         // blocking wait for new tasks
         while (_data.empty()) {
             if (_closedInput)
                 return &_eof;
-            else
-                _cv.wait(ul);
+            _cv.wait(lk);
         }
         // obtain next task
         Task *t = _data.front();
         _data.pop_front();
+        lk.unlock();
         _cv.notify_one();
         return t;
     }
 
     uint64_t size() override {
-        std::unique_lock<std::mutex> lu(_qmutex);
+        std::unique_lock<std::mutex> lk(_qmutex);
         return _data.size();
     }
 
     void closeInput() override {
-        std::unique_lock<std::mutex> lu(_qmutex);
+        std::unique_lock<std::mutex> lk(_qmutex);
         _closedInput = true;
+        lk.unlock();
         _cv.notify_all();
     }
 };

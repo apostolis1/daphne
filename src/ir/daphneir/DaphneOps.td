@@ -91,6 +91,27 @@ def Daphne_ConvertDenseMatrixToMemRef : Daphne_Op<"convertDenseMatrixToMemRef", 
     let results = (outs AnyMemRef:$output);
 }
 
+def Daphne_ConvertCSRMatrixToValuesMemRef : Daphne_Op<"convertCSRMatrixToValuesMemRef", [Pure]> {
+    let summary = "Given a CSRMatrix, return a StridedMemRefType.";
+    let description = [{ Constructs a StridedMemRefType with rank 1 containing the values of a CSRMatrix* with already allocated memory. }];
+    let arguments = (ins MatrixOrU:$arg);
+    let results = (outs AnyMemRef:$resValues);
+}
+
+def Daphne_ConvertCSRMatrixToColIdxsMemRef : Daphne_Op<"convertCSRMatrixToColIdxsMemRef", [Pure]> {
+    let summary = "Given a CSRMatrix, return a StridedMemRefType.";
+    let description = [{ Constructs a StridedMemRefType with rank 1 containing the column indices of a CSRMatrix* with already allocated memory. }];
+    let arguments = (ins MatrixOrU:$arg);
+    let results = (outs AnyMemRef:$resColIdxs);
+}
+
+def Daphne_ConvertCSRMatrixToRowOffsetsMemRef : Daphne_Op<"convertCSRMatrixToRowOffsetsMemRef", [Pure]> {
+    let summary = "Given a CSRMatrix, return a StridedMemRefType.";
+    let description = [{ Constructs a StridedMemRefType with rank 1 containing the row offsets of a CSRMatrix* with already allocated memory. }];
+    let arguments = (ins MatrixOrU:$arg);
+    let results = (outs AnyMemRef:$resRowOffsets);
+}
+
 // ****************************************************************************
 // Data generation
 // ****************************************************************************
@@ -195,7 +216,7 @@ def Daphne_MatMulOp : Daphne_Op<"matMul", [
     DataTypeMat, ValueTypeFromArgs,
     DeclareOpInterfaceMethods<InferShapeOpInterface>,
     DeclareOpInterfaceMethods<InferSparsityOpInterface>, CUDASupport, FPGAOPENCLSupport,
-    CastFirstTwoArgsToResType
+    CastFirstTwoArgsToResType, NoMemoryEffect
 ]> {
     let arguments = (ins MatrixOf<[NumScalar]>:$lhs, MatrixOf<[NumScalar]>:$rhs, BoolScalar:$transa, BoolScalar:$transb);
     let results = (outs MatrixOf<[NumScalar]>:$res);
@@ -241,9 +262,15 @@ def Daphne_EwNegOp : Daphne_EwUnaryOp<"ewNeg", NumScalar, [ValueTypeFromFirstArg
 // Rounding
 // ----------------------------------------------------------------------------
 
-def Daphne_EwRoundOp : Daphne_EwUnaryOp<"ewRound", NumScalar, [ValueTypeFromFirstArg]>;
-def Daphne_EwFloorOp : Daphne_EwUnaryOp<"ewFloor", NumScalar, [ValueTypeFromFirstArg]>;
-def Daphne_EwCeilOp : Daphne_EwUnaryOp<"ewCeil", NumScalar, [ValueTypeFromFirstArg]>;
+def Daphne_EwRoundOp : Daphne_EwUnaryOp<"ewRound", NumScalar, [ValueTypeFromFirstArg]> {
+    let hasCanonicalizeMethod = 1;
+}
+def Daphne_EwFloorOp : Daphne_EwUnaryOp<"ewFloor", NumScalar, [ValueTypeFromFirstArg]> {
+    let hasCanonicalizeMethod = 1;
+}
+def Daphne_EwCeilOp : Daphne_EwUnaryOp<"ewCeil", NumScalar, [ValueTypeFromFirstArg]> {
+    let hasCanonicalizeMethod = 1;
+}
 
 // ----------------------------------------------------------------------------
 // Trigonometric
@@ -264,6 +291,13 @@ def Daphne_EwAtanOp : Daphne_EwUnaryOp<"ewAtan", NumScalar, [ValueTypeFromArgsFP
 // ----------------------------------------------------------------------------
 
 def Daphne_EwIsNanOp : Daphne_EwUnaryOp<"ewIsnan", NumScalar, [ValueTypeFromFirstArg]>;
+
+// ----------------------------------------------------------------------------
+// Strings
+// ----------------------------------------------------------------------------
+
+def Daphne_EwLowerOp : Daphne_EwUnaryOp<"ewLower", StrScalar, [ValueTypeFromFirstArg]>;
+def Daphne_EwUpperOp : Daphne_EwUnaryOp<"ewUpper", StrScalar, [ValueTypeFromFirstArg]>;
 
 // ****************************************************************************
 // Elementwise binary
@@ -295,7 +329,7 @@ class Daphne_EwBinaryOp<string name, Type scalarType, list<Trait> traits = []>
 // ----------------------------------------------------------------------------
 
 // TODO Make EwAddOp Commutative again (see #449).
-def Daphne_EwAddOp    : Daphne_EwBinaryOp<"ewAdd", NumScalar, [ValueTypeFromArgs, CastArgsToResType/*, Commutative*/, EwSparseIfBoth, CUDASupport]> {
+def Daphne_EwAddOp    : Daphne_EwBinaryOp<"ewAdd", AnyScalar, [ValueTypeFromArgs, CastArgsToResType/*, Commutative*/, EwSparseIfBoth, CUDASupport]> {
     let hasCanonicalizeMethod = 1;
 }
 def Daphne_EwSubOp    : Daphne_EwBinaryOp<"ewSub", NumScalar, [ValueTypeFromArgs, CastArgsToResType, EwSparseIfBoth, CUDASupport]> {
@@ -336,7 +370,7 @@ def Daphne_EwBitwiseAndOp    : Daphne_EwBinaryOp<"ewBitwiseAnd", NumScalar, [Com
 // Strings
 // ----------------------------------------------------------------------------
 
-def Daphne_EwConcatOp : Daphne_EwBinaryOp<"ewConcat", StrScalar, [CastArgsToResType]>;
+def Daphne_EwConcatOp : Daphne_EwBinaryOp<"ewConcat", StrScalar, [ValueTypeStr, CastArgsToResType]>;
 
 // ----------------------------------------------------------------------------
 // Comparisons
@@ -792,7 +826,7 @@ def Daphne_ReluForwardOp : Daphne_ActivationForwardOp<"NN_Relu_Forward", [ Value
 // Affine
 // ----------------------------------------------------------------------------
 
-def Daphne_AffineForwardOp : Daphne_Op<"NN_Affine_Forward", [ CUDASupport ]> {
+def Daphne_AffineForwardOp : Daphne_Op<"NN_Affine_Forward", [ ValueTypeFromFirstArg, DataTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins  MatrixOf<[FloatScalar]>:$input, MatrixOf<[FloatScalar]>:$weights,
             MatrixOf<[FloatScalar]>:$bias);
 
@@ -803,14 +837,14 @@ def Daphne_AffineForwardOp : Daphne_Op<"NN_Affine_Forward", [ CUDASupport ]> {
 // Batch Normalization
 // ----------------------------------------------------------------------------
 
-def Daphne_BatchNorm2DTestForwardOp : Daphne_Op<"BatchNorm_Forward_Test", [ CUDASupport ]> {
+def Daphne_BatchNorm2DInferenceForwardOp : Daphne_Op<"BatchNormInferenceForward", [ ValueTypeFromFirstArg, DataTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins
             MatrixOf<[FloatScalar]>:$input, MatrixOf<[FloatScalar]>:$gamma, MatrixOf<[FloatScalar]>:$beta,
             MatrixOf<[FloatScalar]>:$emaMean, MatrixOf<[FloatScalar]>:$emaVar, FloatScalar:$eps);
     let results = (outs MatrixOf<[FloatScalar]>:$output);
 }
 
-def Daphne_BatchNorm2DTrainForwardOp : Daphne_Op<"BatchNorm_Forward_Train", [ CUDASupport ]> {
+def Daphne_BatchNorm2DTrainForwardOp : Daphne_Op<"BatchNorm_Train_Forward", [ ValueTypeFromFirstArg, DataTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins
             MatrixOf<[FloatScalar]>:$input, MatrixOf<[FloatScalar]>:$gamma, MatrixOf<[FloatScalar]>:$beta,
             MatrixOf<[FloatScalar]>:$emaMean, MatrixOf<[FloatScalar]>:$emaVar, FloatScalar:$eps, FloatScalar:$mu);
@@ -821,7 +855,7 @@ def Daphne_BatchNorm2DTrainForwardOp : Daphne_Op<"BatchNorm_Forward_Train", [ CU
                         MatrixOf<[FloatScalar]>:$invVar);
 }
 
-def Daphne_BatchNorm2DBackwardOp : Daphne_Op<"BatchNorm_Backward", [ CUDASupport ]> {
+def Daphne_BatchNorm2DBackwardOp : Daphne_Op<"BatchNorm_Backward", [ ValueTypeFromFirstArg, DataTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins
             MatrixOf<[FloatScalar]>:$mean, MatrixOf<[FloatScalar]>:$invVar, MatrixOf<[FloatScalar]>:$input,
             MatrixOf<[FloatScalar]>:$dout, MatrixOf<[FloatScalar]>:$gamma, FloatScalar:$eps);
@@ -834,7 +868,7 @@ def Daphne_BatchNorm2DBackwardOp : Daphne_Op<"BatchNorm_Backward", [ CUDASupport
 // Bias Addition
 // ----------------------------------------------------------------------------
 
-def Daphne_BiasAddForwardOp : Daphne_Op<"biasAddForward", [ CUDASupport ]> {
+def Daphne_BiasAddOp : Daphne_Op<"BiasAdd", [ ValueTypeFromFirstArg, DataTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins  MatrixOf<[FloatScalar]>:$input, MatrixOf<[FloatScalar]>:$bias);
 
     let results = (outs MatrixOf<[FloatScalar]>:$data);
@@ -845,8 +879,7 @@ def Daphne_BiasAddForwardOp : Daphne_Op<"biasAddForward", [ CUDASupport ]> {
 // ----------------------------------------------------------------------------
 
 def Daphne_Conv2DForwardOp : Daphne_Op<"Convolution_Forward",
-    [ DeclareOpInterfaceMethods<InferTypesOpInterface>,
-      DeclareOpInterfaceMethods<InferShapeOpInterface>,
+    [ DeclareOpInterfaceMethods<InferTypesOpInterface>, DeclareOpInterfaceMethods<InferShapeOpInterface>,
       CUDASupport ]> {
     let arguments = (ins
         MatrixOf<[FloatScalar]>:$input, MatrixOf<[FloatScalar]>:$filter, MatrixOf<[FloatScalar]>:$bias,
@@ -929,7 +962,7 @@ def Daphne_MaxPoolBackwardOp : Daphne_Op<"maxPoolBackward", [ CUDASupport ]> {
 // ----------------------------------------------------------------------------
 // Softmax
 // ----------------------------------------------------------------------------
-def Daphne_SoftmaxForwardOp : Daphne_Op<"softmaxForward", [ CUDASupport ]> {
+def Daphne_SoftmaxOp : Daphne_Op<"Softmax", [ DataTypeFromFirstArg, ValueTypeFromFirstArg, CUDASupport ]> {
     let arguments = (ins  MatrixOf<[FloatScalar]>:$input);
 
     let results = (outs MatrixOf<[FloatScalar]>:$data);
@@ -1063,7 +1096,7 @@ def Daphne_InnerJoinOp : Daphne_Op<"innerJoin", [
     DataTypeFrm, ValueTypesConcat,
     DeclareOpInterfaceMethods<InferFrameLabelsOpInterface>,
 ]> {
-    let arguments = (ins FrameOrU:$lhs, FrameOrU:$rhs, StrScalar:$lhsOn, StrScalar:$rhsOn);
+    let arguments = (ins FrameOrU:$lhs, FrameOrU:$rhs, StrScalar:$lhsOn, StrScalar:$rhsOn, Size:$numRowRes);
     let results = (outs FrameOrU:$res);
 }
 
@@ -1107,7 +1140,7 @@ def Daphne_SemiJoinOp : Daphne_Op<"semiJoin", [
     DeclareOpInterfaceMethods<InferTypesOpInterface>,
     NumColsFromArg
 ]> {
-    let arguments = (ins FrameOrU:$lhs, FrameOrU:$rhs, StrScalar:$lhsOn, StrScalar:$rhsOn);
+    let arguments = (ins FrameOrU:$lhs, FrameOrU:$rhs, StrScalar:$lhsOn, StrScalar:$rhsOn, Size:$numRowRes);
     let results = (outs FrameOrU:$res, MatrixOf<[Size]>:$lhsTids);
 }
 
@@ -1402,7 +1435,7 @@ def Daphne_WriteOp : Daphne_Op<"write"> {
 }
 
 def Daphne_ReceiveFromNumpyOp: Daphne_Op<"receiveFromNumpy">{
-    let arguments = (ins UI32:$upper, UI32:$lower, SI64:$rows, SI64:$cols);
+    let arguments = (ins UI64: $address, SI64:$rows, SI64:$cols);
     let results = (outs MatrixOrU:$res);
 }
 

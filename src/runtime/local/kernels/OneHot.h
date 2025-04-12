@@ -21,8 +21,11 @@
 #include <runtime/local/datastructures/DataObjectFactory.h>
 #include <runtime/local/datastructures/DenseMatrix.h>
 #include <runtime/local/datastructures/Matrix.h>
+#include <runtime/local/datastructures/ValueTypeUtils.h>
 
 #include <stdexcept>
+#include <string>
+#include <unordered_map>
 
 #include <cstddef>
 #include <cstdint>
@@ -33,8 +36,7 @@
 // ****************************************************************************
 
 template <class DTRes, class DTArg> struct OneHot {
-    static void apply(DTRes *&res, const DTArg *arg,
-                      const DenseMatrix<int64_t> *info, DCTX(ctx)) = delete;
+    static void apply(DTRes *&res, const DTArg *arg, const DenseMatrix<int64_t> *info, DCTX(ctx)) = delete;
 };
 
 // ****************************************************************************
@@ -42,8 +44,7 @@ template <class DTRes, class DTArg> struct OneHot {
 // ****************************************************************************
 
 template <class DTRes, class DTArg>
-void oneHot(DTRes *&res, const DTArg *arg, const DenseMatrix<int64_t> *info,
-            DCTX(ctx)) {
+void oneHot(DTRes *&res, const DTArg *arg, const DenseMatrix<int64_t> *info, DCTX(ctx)) {
     OneHot<DTRes, DTArg>::apply(res, arg, info, ctx);
 }
 
@@ -56,19 +57,16 @@ void oneHot(DTRes *&res, const DTArg *arg, const DenseMatrix<int64_t> *info,
 // ----------------------------------------------------------------------------
 
 template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<VT>> {
-    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<VT> *arg,
-                      const DenseMatrix<int64_t> *info, DCTX(ctx)) {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<VT> *arg, const DenseMatrix<int64_t> *info, DCTX(ctx)) {
         if (info->getNumRows() != 1) {
-            throw std::runtime_error(
-                "OneHot - parameter 'info' must be a row matrix");
+            throw std::runtime_error("OneHot - parameter 'info' must be a row matrix");
         }
 
         const size_t numColsArg = arg->getNumCols();
 
         if (numColsArg != info->getNumCols()) {
-            throw std::runtime_error(
-                "OneHot - parameter 'info' must provide information for each "
-                "column of parameter arg");
+            throw std::runtime_error("OneHot - parameter 'info' must provide information for each "
+                                     "column of parameter arg");
         }
 
         size_t numColsRes = 0;
@@ -91,8 +89,7 @@ template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<VT>> {
         const size_t numRows = arg->getNumRows();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows,
-                                                             numColsRes, false);
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numColsRes, false);
 
         const VT *valuesArg = arg->getValues();
         VT *valuesRes = res->getValues();
@@ -110,16 +107,13 @@ template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<VT>> {
                 else if (numDistinct != 0) {
                     // one-hot encode value from argument matrix
                     memset(valuesRes + cRes, VT(0), numDistinct * sizeof(VT));
-                    const size_t argVal =
-                        static_cast<const size_t>(valuesArg[cArg]);
-                    if (argVal >= 0 &&
-                        argVal < static_cast<size_t>(numDistinct))
+                    const size_t argVal = static_cast<const size_t>(valuesArg[cArg]);
+                    if (argVal >= 0 && argVal < static_cast<size_t>(numDistinct))
                         valuesRes[cRes + argVal] = 1;
                     else
-                        throw std::out_of_range(
-                            "OneHot: arg values that are encoded (info value "
-                            "!= -1) must be positive and smaller than the "
-                            "corresponding info value");
+                        throw std::out_of_range("OneHot: arg values that are encoded (info value "
+                                                "!= -1) must be positive and smaller than the "
+                                                "corresponding info value");
                     cRes += numDistinct;
                 }
             }
@@ -130,22 +124,66 @@ template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<VT>> {
 };
 
 // ----------------------------------------------------------------------------
+// DenseMatrix <- DenseMatrix<string>
+// ----------------------------------------------------------------------------
+
+template <typename VTRes, typename VTArg>
+void oneHotString(DenseMatrix<VTRes> *&res, const DenseMatrix<VTArg> *arg, const DenseMatrix<int64_t> *info,
+                  DCTX(ctx)) {
+    const size_t numRows = arg->getNumRows();
+    const size_t numColsArg = arg->getNumCols();
+    const size_t rowSkipArg = arg->getRowSkip();
+    auto recode_result = DataObjectFactory::create<DenseMatrix<VTRes>>(numRows, numColsArg, false);
+
+    VTRes *valuesRes = recode_result->getValues();
+    const VTArg *valuesArg = arg->getValues();
+
+    // Recode arg with string elements to a dense matrix based on indices without ordering
+    for (size_t cArg = 0; cArg < numColsArg; cArg++) {
+        std::unordered_map<VTArg, size_t> firstIndexMap;
+        for (size_t r = 0; r < numRows; r++) {
+            size_t value_index = (rowSkipArg * r) + cArg;
+            if (firstIndexMap.find(valuesArg[value_index]) == firstIndexMap.end()) {
+                firstIndexMap[valuesArg[value_index]] = firstIndexMap.size();
+            }
+            valuesRes[value_index] = VTRes(firstIndexMap[valuesArg[value_index]]);
+        }
+    }
+
+    // call oneHot with recoded matrix as arg
+    oneHot(res, recode_result, info, ctx);
+
+    DataObjectFactory::destroy(recode_result);
+}
+
+template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<std::string>> {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<std::string> *arg, const DenseMatrix<int64_t> *info,
+                      DCTX(ctx)) {
+        oneHotString<VT, std::string>(res, arg, info, ctx);
+    }
+};
+
+template <typename VT> struct OneHot<DenseMatrix<VT>, DenseMatrix<FixedStr16>> {
+    static void apply(DenseMatrix<VT> *&res, const DenseMatrix<FixedStr16> *arg, const DenseMatrix<int64_t> *info,
+                      DCTX(ctx)) {
+        oneHotString<VT, FixedStr16>(res, arg, info, ctx);
+    }
+};
+
+// ----------------------------------------------------------------------------
 // Matrix <- Matrix
 // ----------------------------------------------------------------------------
 
 template <typename VT> struct OneHot<Matrix<VT>, Matrix<VT>> {
-    static void apply(Matrix<VT> *&res, const Matrix<VT> *arg,
-                      const Matrix<int64_t> *info, DCTX(ctx)) {
+    static void apply(Matrix<VT> *&res, const Matrix<VT> *arg, const Matrix<int64_t> *info, DCTX(ctx)) {
         const size_t numColsArg = arg->getNumCols();
         const size_t numRows = arg->getNumRows();
 
         if (info->getNumRows() != 1)
-            throw std::runtime_error(
-                "OneHot: parameter 'info' must be a row matrix");
+            throw std::runtime_error("OneHot: parameter 'info' must be a row matrix");
         if (numColsArg != info->getNumCols())
-            throw std::runtime_error(
-                "OneHot: parameter 'info' must provide information for each "
-                "column of parameter arg");
+            throw std::runtime_error("OneHot: parameter 'info' must provide information for each "
+                                     "column of parameter arg");
 
         size_t numColsRes = 0;
         for (size_t c = 0; c < numColsArg; c++) {
@@ -164,8 +202,7 @@ template <typename VT> struct OneHot<Matrix<VT>, Matrix<VT>> {
                                      "least one non-zero entry");
 
         if (res == nullptr)
-            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows,
-                                                             numColsRes, false);
+            res = DataObjectFactory::create<DenseMatrix<VT>>(numRows, numColsRes, false);
 
         res->prepareAppend();
         for (size_t r = 0; r < numRows; ++r) {
@@ -178,17 +215,14 @@ template <typename VT> struct OneHot<Matrix<VT>, Matrix<VT>> {
                 else if (numDistinct != 0) {
                     // one-hot encode value from argument matrix
                     // skipped values are set to 0
-                    const size_t argVal =
-                        static_cast<const size_t>(arg->get(r, cArg));
-                    if (argVal >= 0 &&
-                        argVal < static_cast<size_t>(numDistinct))
+                    const size_t argVal = static_cast<const size_t>(arg->get(r, cArg));
+                    if (argVal >= 0 && argVal < static_cast<size_t>(numDistinct))
                         res->append(r, cRes + argVal, 1);
                     else
-                        throw std::out_of_range(
-                            "OneHot: arg values that are encoded (info value "
-                            "!= -1) "
-                            "must be positive and smaller than the "
-                            "corresponding info value");
+                        throw std::out_of_range("OneHot: arg values that are encoded (info value "
+                                                "!= -1) "
+                                                "must be positive and smaller than the "
+                                                "corresponding info value");
                     cRes += numDistinct;
                 }
             }

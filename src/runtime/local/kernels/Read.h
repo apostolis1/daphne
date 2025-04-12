@@ -87,28 +87,39 @@ template <typename VT> struct Read<DenseMatrix<VT>> {
         switch (extv) {
         case 0:
             if (res == nullptr)
-                res = DataObjectFactory::create<DenseMatrix<VT>>(
-                    fmd.numRows, fmd.numCols, false);
+                res = DataObjectFactory::create<DenseMatrix<VT>>(fmd.numRows, fmd.numCols, false);
             readCsv(res, filename, fmd.numRows, fmd.numCols, ',');
             break;
         case 1:
-            readMM(res, filename);
+            if constexpr (std::is_same<VT, std::string>::value)
+                throw std::runtime_error("reading string-valued MatrixMarket files is not supported (yet)");
+            else
+                readMM(res, filename);
             break;
         case 2:
-            if (res == nullptr)
-                res = DataObjectFactory::create<DenseMatrix<VT>>(
-                    fmd.numRows, fmd.numCols, false);
-            readParquet(res, filename, fmd.numRows, fmd.numCols);
+            if constexpr (std::is_same<VT, std::string>::value)
+                throw std::runtime_error("reading string-valued Parquet files is not supported (yet)");
+            else {
+                if (res == nullptr)
+                    res = DataObjectFactory::create<DenseMatrix<VT>>(fmd.numRows, fmd.numCols, false);
+                readParquet(res, filename, fmd.numRows, fmd.numCols);
+            }
             break;
         case 3:
-            readDaphne(res, filename);
+            if constexpr (std::is_same<VT, std::string>::value)
+                throw std::runtime_error("reading string-valued DAPHNE binary format files is not supported (yet)");
+            else
+                readDaphne(res, filename);
             break;
 #if USE_HDFS
         case 4:
-            if (res == nullptr)
-                res = DataObjectFactory::create<DenseMatrix<VT>>(
-                    fmd.numRows, fmd.numCols, false);
-            readHDFS(res, filename, ctx);
+            if constexpr (std::is_same<VT, std::string>::value)
+                throw std::runtime_error("reading string-valued HDFS files is not supported (yet)");
+            else {
+                if (res == nullptr)
+                    res = DataObjectFactory::create<DenseMatrix<VT>>(fmd.numRows, fmd.numCols, false);
+                readHDFS(res, filename, ctx);
+            }
             break;
 #endif
         case 5:
@@ -118,7 +129,7 @@ template <typename VT> struct Read<DenseMatrix<VT>> {
             readLustre(res, filename, ctx);
             break;
         default:
-            throw std::runtime_error("File extension not supported");
+            throw std::runtime_error("file extension not supported");
         }
     }
 };
@@ -135,27 +146,22 @@ template <typename VT> struct Read<CSRMatrix<VT>> {
         switch (extv) {
         case 0:
             if (fmd.numNonZeros == -1)
-                throw std::runtime_error(
-                    "Currently reading of sparse matrices requires a number of "
-                    "non zeros to be defined");
+                throw std::runtime_error("Currently reading of sparse matrices requires a number of "
+                                         "non zeros to be defined");
 
             if (res == nullptr)
-                res = DataObjectFactory::create<CSRMatrix<VT>>(
-                    fmd.numRows, fmd.numCols, fmd.numNonZeros, false);
+                res = DataObjectFactory::create<CSRMatrix<VT>>(fmd.numRows, fmd.numCols, fmd.numNonZeros, false);
 
             // FIXME: ensure file is sorted, or set `sorted` argument correctly
-            readCsv(res, filename, fmd.numRows, fmd.numCols, ',',
-                    fmd.numNonZeros, true);
+            readCsv(res, filename, fmd.numRows, fmd.numCols, ',', fmd.numNonZeros, true);
             break;
         case 1:
             readMM(res, filename);
             break;
         case 2:
             if (res == nullptr)
-                res = DataObjectFactory::create<CSRMatrix<VT>>(
-                    fmd.numRows, fmd.numCols, fmd.numNonZeros, false);
-            readParquet(res, filename, fmd.numRows, fmd.numCols,
-                        fmd.numNonZeros, false);
+                res = DataObjectFactory::create<CSRMatrix<VT>>(fmd.numRows, fmd.numCols, fmd.numNonZeros, false);
+            readParquet(res, filename, fmd.numRows, fmd.numCols, fmd.numNonZeros, false);
             break;
         case 3:
             readDaphne(res, filename);
@@ -189,8 +195,7 @@ template <> struct Read<Frame> {
             labels = fmd.labels.data();
 
         if (res == nullptr)
-            res = DataObjectFactory::create<Frame>(fmd.numRows, fmd.numCols,
-                                                   schema, labels, false);
+            res = DataObjectFactory::create<Frame>(fmd.numRows, fmd.numCols, schema, labels, false);
 
         readCsv(res, filename, fmd.numRows, fmd.numCols, ',', schema);
 

@@ -56,8 +56,7 @@ int generality(mlir::Type t) {
 
 mlir::Type mostGeneralVt(const std::vector<mlir::Type> &vt) {
     if (vt.empty())
-        throw std::runtime_error(
-            "mostGeneralVt() invoked with empty list of value types");
+        throw std::runtime_error("mostGeneralVt() invoked with empty list of value types");
 
     mlir::Type res = vt[0];
     for (size_t i = 1; i < vt.size(); i++)
@@ -67,11 +66,9 @@ mlir::Type mostGeneralVt(const std::vector<mlir::Type> &vt) {
     return res;
 }
 
-mlir::Type mostGeneralVt(const std::vector<std::vector<mlir::Type>> &vts,
-                         size_t num) {
+mlir::Type mostGeneralVt(const std::vector<std::vector<mlir::Type>> &vts, size_t num) {
     if (vts.empty())
-        throw std::runtime_error(
-            "mostGeneralVt() invoked with empty list of lists of value types");
+        throw std::runtime_error("mostGeneralVt() invoked with empty list of lists of value types");
 
     if (num == 0)
         num = vts.size();
@@ -86,9 +83,35 @@ mlir::Type mostGeneralVt(const std::vector<std::vector<mlir::Type>> &vts,
     return res;
 }
 
-std::vector<mlir::Type>
-inferValueTypeFromArgs(const std::vector<DataTypeCode> &argDtc,
-                       std::vector<std::vector<mlir::Type>> &argVts) {
+/**
+ * @brief Returns the data type of the given type as a `DataTypeCode` (enum value).
+ *
+ * - For the unknown type, matrices, frames, and scalars, the respective `DataTypeCode` is returned.
+ * - For lists, the `DataTypeCode` of the element type is returned.
+ * - For anything else, an error is thrown.
+ *
+ * @param t the given type
+ * @return the data type of the given type as a `DataTypeCode` (enum value)
+ */
+DataTypeCode getDataTypeCode(mlir::Type t) {
+    if (llvm::isa<mlir::daphne::UnknownType>(t))
+        return DataTypeCode::UNKNOWN;
+    if (llvm::isa<mlir::daphne::FrameType>(t))
+        return DataTypeCode::FRAME;
+    if (llvm::isa<mlir::daphne::MatrixType>(t))
+        return DataTypeCode::MATRIX;
+    if (auto lt = t.dyn_cast<mlir::daphne::ListType>())
+        return getDataTypeCode(lt.getElementType());
+    if (CompilerUtils::isScaType(t))
+        return DataTypeCode::SCALAR;
+
+    std::stringstream s;
+    s << "getDataTypeCode(): the given type is neither a supported data type nor a supported value type: `" << t << '`';
+    throw std::runtime_error(s.str());
+}
+
+std::vector<mlir::Type> inferValueTypeFromArgs(const std::vector<DataTypeCode> &argDtc,
+                                               std::vector<std::vector<mlir::Type>> &argVts) {
     // TODO Simplify: resDtc is already known. If it's not Frame, this
     // can be done simpler and we don't need the getMostGeneralVt later.
 
@@ -99,9 +122,8 @@ inferValueTypeFromArgs(const std::vector<DataTypeCode> &argDtc,
     for (size_t i = 0; i < argVts.size(); i++)
         if (argDtc[i] == DataTypeCode::FRAME) {
             if (hasFrame && argVts[i].size() != commonNumFrameCols)
-                throw std::runtime_error(
-                    "type inference trait ValueTypeFromArgs requires that "
-                    "all input frames have the same number of columns");
+                throw std::runtime_error("type inference trait ValueTypeFromArgs requires that "
+                                         "all input frames have the same number of columns");
             hasFrame = true;
             commonNumFrameCols = argVts[i].size();
         }

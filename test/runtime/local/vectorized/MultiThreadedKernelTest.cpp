@@ -29,23 +29,20 @@
 #define VALUE_TYPES double, float // TODO uint32_t
 
 template <class DT> void funAdd(DT ***outputs, Structure **inputs, DCTX(ctx)) {
-    ewBinaryMat(BinaryOpCode::ADD, *outputs[0],
-                reinterpret_cast<DT *>(inputs[0]),
-                reinterpret_cast<DT *>(inputs[1]), ctx);
+    ewBinaryMat(BinaryOpCode::ADD, *outputs[0], reinterpret_cast<DT *>(inputs[0]), reinterpret_cast<DT *>(inputs[1]),
+                ctx);
 }
 
 template <class DT> void funMul(DT ***outputs, Structure **inputs, DCTX(ctx)) {
-    ewBinaryMat(BinaryOpCode::MUL, *outputs[0],
-                reinterpret_cast<DT *>(inputs[0]),
-                reinterpret_cast<DT *>(inputs[1]), ctx);
+    ewBinaryMat(BinaryOpCode::MUL, *outputs[0], reinterpret_cast<DT *>(inputs[0]), reinterpret_cast<DT *>(inputs[1]),
+                ctx);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded-scheduling", TAG_VECTORIZED,
-                           (DATA_TYPES), (VALUE_TYPES)) {
+TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded-scheduling", TAG_VECTORIZED, (DATA_TYPES), (VALUE_TYPES)) {
     using DT = TestType;
     using VT = typename DT::VT;
     auto dctx = setupContextAndLogger();
-    dctx->config.taskPartitioningScheme = GSS;
+    dctx->config.taskPartitioningScheme = SelfSchedulingScheme::GSS;
     dctx->config.minimumTaskSize = 50;
 
     DT *m1 = nullptr, *m2 = nullptr;
@@ -56,7 +53,8 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded-scheduling", TAG_VECTORIZED,
     ewBinaryMat<DT, DT, DT>(BinaryOpCode::ADD, r1, m1, m2,
                             dctx.get()); // single-threaded
 
-    auto wrapper = std::make_unique<MTWrapper<DT>>(1, dctx.get());
+    static PipelineHWlocInfo topology{dctx->config.queueSetupScheme};
+    auto wrapper = std::make_unique<MTWrapper<DT>>(1, topology, dctx.get());
     DT **outputs[] = {&r2};
     bool isScalar[] = {false, false};
     Structure *inputs[] = {m1, m2};
@@ -67,10 +65,9 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded-scheduling", TAG_VECTORIZED,
 
     std::vector<std::function<void(DT ***, Structure **, DCTX(ctx))>> funcs;
     funcs.push_back(std::function<void(DT ***, Structure **, DCTX(ctx))>(
-        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(
-            reinterpret_cast<void *>(&funAdd<DT>))));
-    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows,
-                              outCols, splits, combines, dctx.get(), false);
+        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(reinterpret_cast<void *>(&funAdd<DT>))));
+    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows, outCols, splits, combines, dctx.get(),
+                              false);
 
     CHECK(checkEqApprox(r1, r2, 1e-6, dctx.get()));
 
@@ -94,7 +91,8 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded X+Y", TAG_VECTORIZED, (DATA_TYPES),
     ewBinaryMat<DT, DT, DT>(BinaryOpCode::ADD, r1, m1, m2,
                             dctx.get()); // single-threaded
 
-    auto wrapper = std::make_unique<MTWrapper<DT>>(1, dctx.get());
+    static PipelineHWlocInfo topology{dctx->config.queueSetupScheme};
+    auto wrapper = std::make_unique<MTWrapper<DT>>(1, topology, dctx.get());
     DT **outputs[] = {&r2};
     bool isScalar[] = {false, false};
     Structure *inputs[] = {m1, m2};
@@ -105,10 +103,9 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded X+Y", TAG_VECTORIZED, (DATA_TYPES),
 
     std::vector<std::function<void(DT ***, Structure **, DCTX(ctx))>> funcs;
     funcs.push_back(std::function<void(DT ***, Structure **, DCTX(ctx))>(
-        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(
-            reinterpret_cast<void *>(&funAdd<DT>))));
-    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows,
-                              outCols, splits, combines, dctx.get(), false);
+        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(reinterpret_cast<void *>(&funAdd<DT>))));
+    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows, outCols, splits, combines, dctx.get(),
+                              false);
 
     CHECK(checkEqApprox(r1, r2, 1e-6, dctx.get()));
 
@@ -132,7 +129,8 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded X*Y", TAG_VECTORIZED, (DATA_TYPES),
     ewBinaryMat<DT, DT, DT>(BinaryOpCode::MUL, r1, m1, m2,
                             dctx.get()); // single-threaded
 
-    auto wrapper = std::make_unique<MTWrapper<DT>>(1, dctx.get());
+    static PipelineHWlocInfo topology{dctx->config.queueSetupScheme};
+    auto wrapper = std::make_unique<MTWrapper<DT>>(1, topology, dctx.get());
     DT **outputs[] = {&r2};
     bool isScalar[] = {false, false};
     Structure *inputs[] = {m1, m2};
@@ -143,10 +141,9 @@ TEMPLATE_PRODUCT_TEST_CASE("Multi-threaded X*Y", TAG_VECTORIZED, (DATA_TYPES),
 
     std::vector<std::function<void(DT ***, Structure **, DCTX(ctx))>> funcs;
     funcs.push_back(std::function<void(DT ***, Structure **, DCTX(ctx))>(
-        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(
-            reinterpret_cast<void *>(&funMul<DT>))));
-    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows,
-                              outCols, splits, combines, dctx.get(), false);
+        reinterpret_cast<void (*)(DT ***, Structure **, DCTX(ctx))>(reinterpret_cast<void *>(&funMul<DT>))));
+    wrapper->executeCpuQueues(funcs, outputs, isScalar, inputs, 2, 1, outRows, outCols, splits, combines, dctx.get(),
+                              false);
 
     CHECK(checkEqApprox(r1, r2, 1e-6, dctx.get()));
 

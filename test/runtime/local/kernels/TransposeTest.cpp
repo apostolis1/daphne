@@ -35,8 +35,7 @@ template <class DT> void checkTranspose(const DT *arg, const DT *exp) {
     CHECK(*res == *exp);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("Transpose", TAG_KERNELS, (DATA_TYPES),
-                           (VALUE_TYPES)) {
+TEMPLATE_PRODUCT_TEST_CASE("Transpose", TAG_KERNELS, (DATA_TYPES), (VALUE_TYPES)) {
     using DT = TestType;
 
     DT *m = nullptr;
@@ -73,15 +72,14 @@ TEMPLATE_PRODUCT_TEST_CASE("Transpose", TAG_KERNELS, (DATA_TYPES),
                                  });
     }
     SECTION("sparse matrix") {
-        m = genGivenVals<DT>(5, {
-                                    0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0,
-                                    0, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 6, 0,
-                                });
-        mt =
-            genGivenVals<DT>(6, {
-                                    0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0,
-                                });
+        m = genGivenVals<DT>(
+            5, {
+                   0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 6, 0,
+               });
+        mt = genGivenVals<DT>(
+            6, {
+                   0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0,
+               });
     }
     SECTION("empty matrix") {
         m = genGivenVals<DT>(3, {
@@ -117,4 +115,47 @@ TEMPLATE_PRODUCT_TEST_CASE("Transpose", TAG_KERNELS, (DATA_TYPES),
     checkTranspose(m, mt);
 
     DataObjectFactory::destroy(m, mt);
+}
+
+TEMPLATE_PRODUCT_TEST_CASE("Transpose", TAG_KERNELS, (DenseMatrix), (ALL_STRING_VALUE_TYPES)) {
+    using DT = TestType;
+    using VT = typename DT::VT;
+    ;
+
+    DT *m = nullptr;
+    DT *mt = nullptr;
+
+    m = genGivenVals<DT>(3, {
+                                VT("1"),
+                                VT("a"),
+                                VT("3"),
+                                VT("4"),
+                                VT("5"),
+                                VT("ab"),
+                                VT("7"),
+                                VT("8"),
+                                VT("9"),
+                                VT("abc"),
+                                VT("11"),
+                                VT("12"),
+                            });
+    mt = genGivenVals<DT>(4, {
+                                 VT("1"),
+                                 VT("5"),
+                                 VT("9"),
+                                 VT("a"),
+                                 VT("ab"),
+                                 VT("abc"),
+                                 VT("3"),
+                                 VT("7"),
+                                 VT("11"),
+                                 VT("4"),
+                                 VT("8"),
+                                 VT("12"),
+                             });
+
+    checkTranspose(m, mt);
+
+    DataObjectFactory::destroy(m);
+    DataObjectFactory::destroy(mt);
 }

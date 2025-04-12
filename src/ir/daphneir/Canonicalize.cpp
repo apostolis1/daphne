@@ -1,10 +1,26 @@
+/*
+ * Copyright 2024 The DAPHNE Consortium
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "ir/daphneir/Daphne.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Support/LogicalResult.h"
 #include <compiler/utils/CompilerUtils.h>
 
-mlir::LogicalResult mlir::daphne::VectorizedPipelineOp::canonicalize(
-    mlir::daphne::VectorizedPipelineOp op, mlir::PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::VectorizedPipelineOp::canonicalize(mlir::daphne::VectorizedPipelineOp op,
+                                                                     mlir::PatternRewriter &rewriter) {
     // // Find duplicate inputs
     std::vector<Attribute> vSplitsAttrs;
     for (auto &split : op.getSplits())
@@ -15,17 +31,14 @@ mlir::LogicalResult mlir::daphne::VectorizedPipelineOp::canonicalize(
 
     for (size_t i = 0; i < currentSize; i++) {
         const auto &input = op.getInputs()[i];
-        const auto &split =
-            op.getSplits()[i].cast<daphne::VectorSplitAttr>().getValue();
+        const auto &split = vSplitsAttrs[i].cast<daphne::VectorSplitAttr>().getValue();
 
         if (inputMap.count(input) == 0) {
             inputMap[input] = i;
         } else {
             size_t j = inputMap[input];
-            if (op.getSplits()[j].cast<daphne::VectorSplitAttr>().getValue() ==
-                split) {
-                op.getBody().getArgument(i).replaceAllUsesWith(
-                    op.getBody().getArgument(j));
+            if (op.getSplits()[j].cast<daphne::VectorSplitAttr>().getValue() == split) {
+                op.getBody().getArgument(i).replaceAllUsesWith(op.getBody().getArgument(j));
                 op.getBody().eraseArgument(i);
                 op.getInputsMutable().erase(i);
                 vSplitsAttrs.erase(vSplitsAttrs.begin() + i);
@@ -58,14 +71,12 @@ mlir::LogicalResult mlir::daphne::VectorizedPipelineOp::canonicalize(
     if (!op.getCuda().getBlocks().empty())
         op.getCuda().front().getTerminator()->eraseOperands(eraseIxs);
 
-    if (resultsToReplace.size() == op->getNumResults() &&
-        op.getSplits().size() == vSplitsAttrs.size()) {
+    if (resultsToReplace.size() == op->getNumResults() && op.getSplits().size() == vSplitsAttrs.size()) {
         return failure();
     }
     auto pipelineOp = rewriter.create<daphne::VectorizedPipelineOp>(
-        op.getLoc(), ValueRange(resultsToReplace).getTypes(), op.getInputs(),
-        outRows, outCols, rewriter.getArrayAttr(vSplitsAttrs),
-        rewriter.getArrayAttr(vCombineAttrs), op.getCtx());
+        op.getLoc(), ValueRange(resultsToReplace).getTypes(), op.getInputs(), outRows, outCols,
+        rewriter.getArrayAttr(vSplitsAttrs), rewriter.getArrayAttr(vCombineAttrs), op.getCtx());
     pipelineOp.getBody().takeBody(op.getBody());
     if (!op.getCuda().getBlocks().empty())
         pipelineOp.getCuda().takeBody(op.getCuda());
@@ -84,9 +95,7 @@ mlir::LogicalResult mlir::daphne::VectorizedPipelineOp::canonicalize(
  * the Operation, passing transposition info as a flag, instead of transposing
  * the matrix before multiplication
  */
-mlir::LogicalResult
-mlir::daphne::MatMulOp::canonicalize(mlir::daphne::MatMulOp op,
-                                     PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::MatMulOp::canonicalize(mlir::daphne::MatMulOp op, PatternRewriter &rewriter) {
     mlir::Value lhs = op.getLhs();
     mlir::Value rhs = op.getRhs();
     mlir::Value transa = op.getTransa();
@@ -100,8 +109,7 @@ mlir::daphne::MatMulOp::canonicalize(mlir::daphne::MatMulOp op,
     // TODO Turn on the transposition-awareness for the left-hand-side argument
     // again (see #447). mlir::daphne::TransposeOp lhsTransposeOp =
     // lhs.getDefiningOp<mlir::daphne::TransposeOp>();
-    mlir::daphne::TransposeOp rhsTransposeOp =
-        rhs.getDefiningOp<mlir::daphne::TransposeOp>();
+    mlir::daphne::TransposeOp rhsTransposeOp = rhs.getDefiningOp<mlir::daphne::TransposeOp>();
 
     // if (!lhsTransposeOp && !rhsTransposeOp){
     if (!rhsTransposeOp) {
@@ -133,10 +141,8 @@ mlir::daphne::MatMulOp::canonicalize(mlir::daphne::MatMulOp op,
 
     rewriter.replaceOpWithNewOp<mlir::daphne::MatMulOp>(
         op, op.getType(), lhs, rhs,
-        static_cast<mlir::Value>(
-            rewriter.create<mlir::daphne::ConstantOp>(transa.getLoc(), ta)),
-        static_cast<mlir::Value>(
-            rewriter.create<mlir::daphne::ConstantOp>(transb.getLoc(), tb)));
+        static_cast<mlir::Value>(rewriter.create<mlir::daphne::ConstantOp>(transa.getLoc(), ta)),
+        static_cast<mlir::Value>(rewriter.create<mlir::daphne::ConstantOp>(transb.getLoc(), tb)));
     return mlir::success();
 }
 
@@ -144,9 +150,7 @@ mlir::daphne::MatMulOp::canonicalize(mlir::daphne::MatMulOp op,
  * @brief Replaces NumRowsOp by a constant, if the #rows of the input is known
  * (e.g., due to shape inference).
  */
-mlir::LogicalResult
-mlir::daphne::NumRowsOp::canonicalize(mlir::daphne::NumRowsOp op,
-                                      PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::NumRowsOp::canonicalize(mlir::daphne::NumRowsOp op, PatternRewriter &rewriter) {
     ssize_t numRows = -1;
 
     mlir::Type inTy = op.getArg().getType();
@@ -156,8 +160,8 @@ mlir::daphne::NumRowsOp::canonicalize(mlir::daphne::NumRowsOp op,
         numRows = t.getNumRows();
 
     if (numRows != -1) {
-        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(
-            op, rewriter.getIndexType(), rewriter.getIndexAttr(numRows));
+        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(op, rewriter.getIndexType(),
+                                                              rewriter.getIndexAttr(numRows));
         return mlir::success();
     }
     return mlir::failure();
@@ -167,9 +171,7 @@ mlir::daphne::NumRowsOp::canonicalize(mlir::daphne::NumRowsOp op,
  * @brief Replaces NumColsOp by a constant, if the #cols of the input is known
  * (e.g., due to shape inference).
  */
-mlir::LogicalResult
-mlir::daphne::NumColsOp::canonicalize(mlir::daphne::NumColsOp op,
-                                      PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::NumColsOp::canonicalize(mlir::daphne::NumColsOp op, PatternRewriter &rewriter) {
     ssize_t numCols = -1;
 
     mlir::Type inTy = op.getArg().getType();
@@ -179,8 +181,8 @@ mlir::daphne::NumColsOp::canonicalize(mlir::daphne::NumColsOp op,
         numCols = t.getNumCols();
 
     if (numCols != -1) {
-        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(
-            op, rewriter.getIndexType(), rewriter.getIndexAttr(numCols));
+        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(op, rewriter.getIndexType(),
+                                                              rewriter.getIndexAttr(numCols));
         return mlir::success();
     }
     return mlir::failure();
@@ -190,9 +192,7 @@ mlir::daphne::NumColsOp::canonicalize(mlir::daphne::NumColsOp op,
  * @brief Replaces NumCellsOp by a constant, if the #rows and #cols of the
  * input is known (e.g., due to shape inference).
  */
-mlir::LogicalResult
-mlir::daphne::NumCellsOp::canonicalize(mlir::daphne::NumCellsOp op,
-                                       PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::NumCellsOp::canonicalize(mlir::daphne::NumCellsOp op, PatternRewriter &rewriter) {
     ssize_t numRows = -1;
     ssize_t numCols = -1;
 
@@ -206,9 +206,8 @@ mlir::daphne::NumCellsOp::canonicalize(mlir::daphne::NumCellsOp op,
     }
 
     if (numRows != -1 && numCols != -1) {
-        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(
-            op, rewriter.getIndexType(),
-            rewriter.getIndexAttr(numRows * numCols));
+        rewriter.replaceOpWithNewOp<mlir::daphne::ConstantOp>(op, rewriter.getIndexType(),
+                                                              rewriter.getIndexAttr(numRows * numCols));
         return mlir::success();
     }
     return mlir::failure();
@@ -218,9 +217,7 @@ mlir::daphne::NumCellsOp::canonicalize(mlir::daphne::NumCellsOp op,
  * @brief Replaces SparsityOp by a constant, if the sparsity of the input is
  * known (e.g., due to sparsity inference).
  */
-mlir::LogicalResult
-mlir::daphne::SparsityOp::canonicalize(mlir::daphne::SparsityOp op,
-                                       PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::SparsityOp::canonicalize(mlir::daphne::SparsityOp op, PatternRewriter &rewriter) {
     double sparsity = -1.0;
 
     mlir::Type inTy = op.getArg().getType();
@@ -249,9 +246,7 @@ mlir::daphne::SparsityOp::canonicalize(mlir::daphne::SparsityOp op,
  * @param rewriter
  * @return
  */
-mlir::LogicalResult
-mlir::daphne::EwAddOp::canonicalize(mlir::daphne::EwAddOp op,
-                                    PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::EwAddOp::canonicalize(mlir::daphne::EwAddOp op, PatternRewriter &rewriter) {
     mlir::Value lhs = op.getLhs();
     mlir::Value rhs = op.getRhs();
 
@@ -259,26 +254,37 @@ mlir::daphne::EwAddOp::canonicalize(mlir::daphne::EwAddOp op,
     const bool rhsIsStr = llvm::isa<mlir::daphne::StringType>(rhs.getType());
     if (lhsIsStr || rhsIsStr) {
         mlir::Type strTy = mlir::daphne::StringType::get(rewriter.getContext());
-        if (!lhsIsStr)
-            lhs =
-                rewriter.create<mlir::daphne::CastOp>(op.getLoc(), strTy, lhs);
+        if (!lhsIsStr) {
+            const bool lhsIsSca = !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(lhs.getType());
+            if (!lhsIsSca) {
+                const bool lhsIsMatStr =
+                    llvm::isa<mlir::daphne::StringType>(lhs.getType().dyn_cast<daphne::MatrixType>().getElementType());
+                if (lhsIsMatStr) {
+                    rewriter.replaceOpWithNewOp<mlir::daphne::EwConcatOp>(op, op.getResult().getType(), lhs, rhs);
+                    return mlir::success();
+                }
+            } else
+                lhs = rewriter.create<mlir::daphne::CastOp>(op.getLoc(), strTy, lhs);
+        }
         if (!rhsIsStr)
-            rhs =
-                rewriter.create<mlir::daphne::CastOp>(op.getLoc(), strTy, rhs);
-        rewriter.replaceOpWithNewOp<mlir::daphne::EwConcatOp>(op, strTy, lhs,
-                                                              rhs);
+            rhs = rewriter.create<mlir::daphne::CastOp>(op.getLoc(), strTy, rhs);
+        rewriter.replaceOpWithNewOp<mlir::daphne::EwConcatOp>(op, op.getResult().getType(), lhs, rhs);
         return mlir::success();
     } else {
-        const bool lhsIsSca =
-            !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-                lhs.getType());
-        const bool rhsIsSca =
-            !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-                rhs.getType());
+        const bool lhsIsSca = !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(lhs.getType());
+        const bool rhsIsSca = !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(rhs.getType());
         if (lhsIsSca && !rhsIsSca) {
-            rewriter.replaceOpWithNewOp<mlir::daphne::EwAddOp>(
-                op, op.getResult().getType(), rhs, lhs);
+            rewriter.replaceOpWithNewOp<mlir::daphne::EwAddOp>(op, op.getResult().getType(), rhs, lhs);
             return mlir::success();
+        } else if (!lhsIsSca && !rhsIsSca) {
+            const bool lhsIsMatStr =
+                llvm::isa<mlir::daphne::StringType>(lhs.getType().dyn_cast<daphne::MatrixType>().getElementType());
+            const bool rhsIsMatStr =
+                llvm::isa<mlir::daphne::StringType>(rhs.getType().dyn_cast<daphne::MatrixType>().getElementType());
+            if (lhsIsMatStr && rhsIsMatStr) {
+                rewriter.replaceOpWithNewOp<mlir::daphne::EwConcatOp>(op, op.getResult().getType(), lhs, rhs);
+                return mlir::success();
+            }
         }
         return mlir::failure();
     }
@@ -296,27 +302,18 @@ mlir::daphne::EwAddOp::canonicalize(mlir::daphne::EwAddOp op,
  * @param rewriter
  * @return
  */
-mlir::LogicalResult
-mlir::daphne::EwSubOp::canonicalize(mlir::daphne::EwSubOp op,
-                                    PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::EwSubOp::canonicalize(mlir::daphne::EwSubOp op, PatternRewriter &rewriter) {
     mlir::Value lhs = op.getLhs();
     mlir::Value rhs = op.getRhs();
-    const bool lhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            lhs.getType());
-    const bool rhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            rhs.getType());
+    const bool lhsIsSca = CompilerUtils::isScaType(lhs.getType());
+    const bool rhsIsSca = CompilerUtils::isScaType(rhs.getType());
     if (lhsIsSca && !rhsIsSca) {
         rewriter.replaceOpWithNewOp<mlir::daphne::EwAddOp>(
             op, op.getResult().getType(),
             rewriter.create<mlir::daphne::EwMulOp>(
                 op->getLoc(),
-                mlir::daphne::UnknownType::get(
-                    op->getContext()), // to be inferred
-                rhs,
-                rewriter.create<mlir::daphne::ConstantOp>(op->getLoc(),
-                                                          int64_t(-1))),
+                mlir::daphne::UnknownType::get(op->getContext()), // to be inferred
+                rhs, rewriter.create<mlir::daphne::ConstantOp>(op->getLoc(), int64_t(-1))),
             lhs);
         return mlir::success();
     }
@@ -333,20 +330,13 @@ mlir::daphne::EwSubOp::canonicalize(mlir::daphne::EwSubOp op,
  * @param rewriter
  * @return
  */
-mlir::LogicalResult
-mlir::daphne::EwMulOp::canonicalize(mlir::daphne::EwMulOp op,
-                                    PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::EwMulOp::canonicalize(mlir::daphne::EwMulOp op, PatternRewriter &rewriter) {
     mlir::Value lhs = op.getLhs();
     mlir::Value rhs = op.getRhs();
-    const bool lhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            lhs.getType());
-    const bool rhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            rhs.getType());
+    const bool lhsIsSca = CompilerUtils::isScaType(lhs.getType());
+    const bool rhsIsSca = CompilerUtils::isScaType(rhs.getType());
     if (lhsIsSca && !rhsIsSca) {
-        rewriter.replaceOpWithNewOp<mlir::daphne::EwMulOp>(
-            op, op.getResult().getType(), rhs, lhs);
+        rewriter.replaceOpWithNewOp<mlir::daphne::EwMulOp>(op, op.getResult().getType(), rhs, lhs);
         return mlir::success();
     }
     return mlir::failure();
@@ -365,29 +355,19 @@ mlir::daphne::EwMulOp::canonicalize(mlir::daphne::EwMulOp op,
  * @param rewriter
  * @return
  */
-mlir::LogicalResult
-mlir::daphne::EwDivOp::canonicalize(mlir::daphne::EwDivOp op,
-                                    PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::EwDivOp::canonicalize(mlir::daphne::EwDivOp op, PatternRewriter &rewriter) {
     mlir::Value lhs = op.getLhs();
     mlir::Value rhs = op.getRhs();
-    const bool lhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            lhs.getType());
-    const bool rhsIsSca =
-        !llvm::isa<mlir::daphne::MatrixType, mlir::daphne::FrameType>(
-            rhs.getType());
-    const bool rhsIsFP =
-        llvm::isa<mlir::FloatType>(CompilerUtils::getValueType(rhs.getType()));
+    const bool lhsIsSca = CompilerUtils::isScaType(lhs.getType());
+    const bool rhsIsSca = CompilerUtils::isScaType(rhs.getType());
+    const bool rhsIsFP = llvm::isa<mlir::FloatType>(CompilerUtils::getValueType(rhs.getType()));
     if (lhsIsSca && !rhsIsSca && rhsIsFP) {
         rewriter.replaceOpWithNewOp<mlir::daphne::EwMulOp>(
             op, op.getResult().getType(),
-            rewriter.create<mlir::daphne::EwPowOp>(
-                op->getLoc(),
-                mlir::daphne::UnknownType::get(
-                    op->getContext()), // to be inferred
-                rhs,
-                rewriter.create<mlir::daphne::ConstantOp>(op->getLoc(),
-                                                          double(-1))),
+            rewriter.create<mlir::daphne::EwPowOp>(op->getLoc(),
+                                                   mlir::daphne::UnknownType::get(op->getContext()), // to be inferred
+                                                   rhs,
+                                                   rewriter.create<mlir::daphne::ConstantOp>(op->getLoc(), double(-1))),
             lhs);
         return mlir::success();
     }
@@ -399,23 +379,17 @@ mlir::daphne::EwDivOp::canonicalize(mlir::daphne::EwDivOp op,
  * value (a) is defined by a `ReadOp`, and (b) is not used elsewhere.
  * @param context
  */
-struct SimplifyDistributeRead
-    : public mlir::OpRewritePattern<mlir::daphne::DistributeOp> {
-    SimplifyDistributeRead(mlir::MLIRContext *context)
-        : OpRewritePattern<mlir::daphne::DistributeOp>(context, 1) {
+struct SimplifyDistributeRead : public mlir::OpRewritePattern<mlir::daphne::DistributeOp> {
+    SimplifyDistributeRead(mlir::MLIRContext *context) : OpRewritePattern<mlir::daphne::DistributeOp>(context, 1) {
         //
     }
 
-    mlir::LogicalResult
-    matchAndRewrite(mlir::daphne::DistributeOp op,
-                    mlir::PatternRewriter &rewriter) const override {
-        mlir::daphne::ReadOp readOp =
-            op.getMat().getDefiningOp<mlir::daphne::ReadOp>();
+    mlir::LogicalResult matchAndRewrite(mlir::daphne::DistributeOp op, mlir::PatternRewriter &rewriter) const override {
+        mlir::daphne::ReadOp readOp = op.getMat().getDefiningOp<mlir::daphne::ReadOp>();
         if (!readOp || !readOp.getOperation()->hasOneUse())
             return mlir::failure();
-        rewriter.replaceOp(
-            op, {rewriter.create<mlir::daphne::DistributedReadOp>(
-                    readOp.getLoc(), op.getType(), readOp.getFileName())});
+        rewriter.replaceOp(op, {rewriter.create<mlir::daphne::DistributedReadOp>(readOp.getLoc(), op.getType(),
+                                                                                 readOp.getFileName())});
         // TODO Instead of erasing the ReadOp here, the compiler should
         // generally remove unused SSA values. Then, we might even drop the
         // hasOneUse requirement above.
@@ -424,31 +398,25 @@ struct SimplifyDistributeRead
     }
 };
 
-void mlir::daphne::DistributeOp::getCanonicalizationPatterns(
-    RewritePatternSet &results, MLIRContext *context) {
+void mlir::daphne::DistributeOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRContext *context) {
     results.add<SimplifyDistributeRead>(context);
 }
 
-mlir::LogicalResult
-mlir::daphne::CondOp::canonicalize(mlir::daphne::CondOp op,
-                                   mlir::PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::CondOp::canonicalize(mlir::daphne::CondOp op, mlir::PatternRewriter &rewriter) {
     mlir::Value cond = op.getCond();
-    if (llvm::isa<mlir::daphne::UnknownType, mlir::daphne::MatrixType,
-                  mlir::daphne::FrameType>(cond.getType()))
+    if (CompilerUtils::hasObjType(cond) || llvm::isa<mlir::daphne::UnknownType>(cond.getType()))
         // If the condition is not a scalar, we cannot rewrite the operation
         // here.
         return mlir::failure();
-    else {
+    if (CompilerUtils::hasScaType(cond)) {
         // If the condition is a scalar, we rewrite the operation to an
         // if-then-else construct using the SCF dialect.
-        // TODO Check if it is really a scalar.
 
         mlir::Location loc = op.getLoc();
 
         // Ensure that the condition is a boolean.
         if (!cond.getType().isSignlessInteger(1))
-            cond = rewriter.create<mlir::daphne::CastOp>(
-                loc, rewriter.getI1Type(), cond);
+            cond = rewriter.create<mlir::daphne::CastOp>(loc, rewriter.getI1Type(), cond);
 
         mlir::Block thenBlock;
         mlir::Block elseBlock;
@@ -459,17 +427,14 @@ mlir::daphne::CondOp::canonicalize(mlir::daphne::CondOp op,
         // comparison (see #485).
         if (auto thenFrmTy = thenVal.getType().dyn_cast<daphne::FrameType>())
             if (thenFrmTy.getLabels() != nullptr)
-                thenVal = rewriter.create<mlir::daphne::CastOp>(
-                    loc, thenFrmTy.withLabels(nullptr), thenVal);
+                thenVal = rewriter.create<mlir::daphne::CastOp>(loc, thenFrmTy.withLabels(nullptr), thenVal);
         if (auto elseFrmTy = elseVal.getType().dyn_cast<daphne::FrameType>())
             if (elseFrmTy.getLabels() != nullptr)
-                elseVal = rewriter.create<mlir::daphne::CastOp>(
-                    loc, elseFrmTy.withLabels(nullptr), elseVal);
+                elseVal = rewriter.create<mlir::daphne::CastOp>(loc, elseFrmTy.withLabels(nullptr), elseVal);
 
         // Check if the types of the then-value and the else-value are the same.
         if (thenVal.getType() != elseVal.getType()) {
-            if (llvm::isa<daphne::UnknownType>(thenVal.getType()) ||
-                llvm::isa<daphne::UnknownType>(elseVal.getType()))
+            if (llvm::isa<daphne::UnknownType>(thenVal.getType()) || llvm::isa<daphne::UnknownType>(elseVal.getType()))
                 // If one of them is unknown, we abort the rewrite (but this is
                 // not an error). The type may become known later, this rewrite
                 // will be triggered again.
@@ -477,10 +442,9 @@ mlir::daphne::CondOp::canonicalize(mlir::daphne::CondOp op,
             else
                 // If both types are known, but different, this is an error.
                 // TODO We could try to cast the types.
-                throw ErrorHandler::compilerError(
-                    op, "CanonicalizerPass (mlir::daphne::CondOp)",
-                    "the then/else-values of CondOp must have the same value "
-                    "type");
+                throw ErrorHandler::compilerError(op, "CanonicalizerPass (mlir::daphne::CondOp)",
+                                                  "the then/else-values of CondOp must have the same value "
+                                                  "type");
         }
 
         {
@@ -505,36 +469,33 @@ mlir::daphne::CondOp::canonicalize(mlir::daphne::CondOp op,
 
         // Helper functions to move the operations in the two blocks created
         // above into the actual branches of the if-operation.
-        auto insertThenBlockDo = [&](mlir::OpBuilder &nested,
-                                     mlir::Location loc) {
-            nested.getBlock()->getOperations().splice(
-                nested.getBlock()->end(), thenBlock.getOperations());
+        auto insertThenBlockDo = [&](mlir::OpBuilder &nested, mlir::Location loc) {
+            nested.getBlock()->getOperations().splice(nested.getBlock()->end(), thenBlock.getOperations());
         };
-        auto insertElseBlockDo = [&](mlir::OpBuilder &nested,
-                                     mlir::Location loc) {
-            nested.getBlock()->getOperations().splice(
-                nested.getBlock()->end(), elseBlock.getOperations());
+        auto insertElseBlockDo = [&](mlir::OpBuilder &nested, mlir::Location loc) {
+            nested.getBlock()->getOperations().splice(nested.getBlock()->end(), elseBlock.getOperations());
         };
 
         // Replace the daphne::CondOp by an scf::IfOp.
-        rewriter.replaceOpWithNewOp<mlir::scf::IfOp>(
-            op, cond, insertThenBlockDo, insertElseBlockDo);
+        rewriter.replaceOpWithNewOp<mlir::scf::IfOp>(op, cond, insertThenBlockDo, insertElseBlockDo);
 
         return mlir::success();
     }
+
+    std::stringstream s;
+    s << "CondOp::canonicalize(): the condition has neither a supported data type nor a supported value type";
+    throw std::runtime_error(s.str());
 }
 
-mlir::LogicalResult mlir::daphne::ConvertDenseMatrixToMemRef::canonicalize(
-    mlir::daphne::ConvertDenseMatrixToMemRef op,
-    mlir::PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::ConvertDenseMatrixToMemRef::canonicalize(mlir::daphne::ConvertDenseMatrixToMemRef op,
+                                                                           mlir::PatternRewriter &rewriter) {
     // removes unnecessary conversions of MemRef -> DM -> MemRef
     mlir::Operation *dmNode = op->getOperand(0).getDefiningOp();
 
     if (!llvm::isa<mlir::daphne::ConvertMemRefToDenseMatrix>(dmNode))
         return failure();
 
-    mlir::Operation *originalMemRefOp =
-        dmNode->getPrevNode()->getOperand(0).getDefiningOp();
+    mlir::Operation *originalMemRefOp = dmNode->getPrevNode()->getOperand(0).getDefiningOp();
     op.replaceAllUsesWith(originalMemRefOp);
 
     rewriter.eraseOp(op);
@@ -544,9 +505,8 @@ mlir::LogicalResult mlir::daphne::ConvertDenseMatrixToMemRef::canonicalize(
     return mlir::success();
 }
 
-mlir::LogicalResult mlir::daphne::ConvertMemRefToDenseMatrix::canonicalize(
-    mlir::daphne::ConvertMemRefToDenseMatrix op,
-    mlir::PatternRewriter &rewriter) {
+mlir::LogicalResult mlir::daphne::ConvertMemRefToDenseMatrix::canonicalize(mlir::daphne::ConvertMemRefToDenseMatrix op,
+                                                                           mlir::PatternRewriter &rewriter) {
     mlir::Operation *extractPtr = op->getPrevNode();
     auto srcMemRef = extractPtr->getOperand(0).getDefiningOp();
     extractPtr->moveAfter(srcMemRef);
@@ -555,9 +515,67 @@ mlir::LogicalResult mlir::daphne::ConvertMemRefToDenseMatrix::canonicalize(
     return mlir::success();
 }
 
-mlir::LogicalResult
-mlir::daphne::RenameOp::canonicalize(mlir::daphne::RenameOp op,
-                                     mlir::PatternRewriter &rewriter) {
+/**
+ * @brief Replaces `floor(a)` with `a` if `a` is an integer
+ * or a matrix of integers.
+ *
+ * @param op
+ * @param rewriter
+ * @return
+ */
+mlir::LogicalResult mlir::daphne::EwFloorOp::canonicalize(mlir::daphne::EwFloorOp op, mlir::PatternRewriter &rewriter) {
+    mlir::Value operand = op.getOperand();
+    auto matrix = operand.getType().dyn_cast<mlir::daphne::MatrixType>();
+    mlir::Type elemType = matrix ? matrix.getElementType() : operand.getType();
+
+    if (llvm::isa<mlir::IntegerType>(elemType)) {
+        rewriter.replaceOp(op, operand);
+        return mlir::success();
+    }
+    return mlir::failure();
+}
+
+/**
+ * @brief Replaces `ceil(a)` with `a` if `a` is an integer
+ * or a matrix of integers.
+ *
+ * @param op
+ * @param rewriter
+ * @return
+ */
+mlir::LogicalResult mlir::daphne::EwCeilOp::canonicalize(mlir::daphne::EwCeilOp op, mlir::PatternRewriter &rewriter) {
+    mlir::Value operand = op.getOperand();
+    auto matrix = operand.getType().dyn_cast<mlir::daphne::MatrixType>();
+    mlir::Type elemType = matrix ? matrix.getElementType() : operand.getType();
+
+    if (llvm::isa<mlir::IntegerType>(elemType)) {
+        rewriter.replaceOp(op, operand);
+        return mlir::success();
+    }
+    return mlir::failure();
+}
+
+/**
+ * @brief Replaces `round(a)` with `a` if `a` is an integer
+ * or a matrix of integers.
+ *
+ * @param op
+ * @param rewriter
+ * @return
+ */
+mlir::LogicalResult mlir::daphne::EwRoundOp::canonicalize(mlir::daphne::EwRoundOp op, mlir::PatternRewriter &rewriter) {
+    mlir::Value operand = op.getOperand();
+    auto matrix = operand.getType().dyn_cast<mlir::daphne::MatrixType>();
+    mlir::Type elemType = matrix ? matrix.getElementType() : operand.getType();
+
+    if (llvm::isa<mlir::IntegerType>(elemType)) {
+        rewriter.replaceOp(op, operand);
+        return mlir::success();
+    }
+    return mlir::failure();
+}
+
+mlir::LogicalResult mlir::daphne::RenameOp::canonicalize(mlir::daphne::RenameOp op, mlir::PatternRewriter &rewriter) {
     // Replace the RenameOp by its argument, since we only need
     // this operation during DaphneDSL parsing.
     rewriter.replaceOp(op, op.getArg());
@@ -571,11 +589,8 @@ mlir::daphne::RenameOp::canonicalize(mlir::daphne::RenameOp op,
  * @param rewriter
  * @return
  */
-mlir::LogicalResult
-mlir::daphne::EwMinusOp::canonicalize(mlir::daphne::EwMinusOp op,
-                                      PatternRewriter &rewriter) {
-    if (auto innerOp =
-            op.getOperand().getDefiningOp<mlir::daphne::EwMinusOp>()) {
+mlir::LogicalResult mlir::daphne::EwMinusOp::canonicalize(mlir::daphne::EwMinusOp op, PatternRewriter &rewriter) {
+    if (auto innerOp = op.getOperand().getDefiningOp<mlir::daphne::EwMinusOp>()) {
         rewriter.replaceOp(op, innerOp.getOperand());
         return mlir::success();
     }

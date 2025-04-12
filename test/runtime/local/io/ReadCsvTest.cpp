@@ -86,8 +86,7 @@ TEMPLATE_PRODUCT_TEST_CASE("ReadCsv", TAG_IO, (DenseMatrix), (uint8_t)) {
     DataObjectFactory::destroy(m);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, col + row ignore", TAG_IO, (DenseMatrix),
-                           (int8_t)) {
+TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, col + row ignore", TAG_IO, (DenseMatrix), (int8_t)) {
     using DT = TestType;
     DT *m = nullptr;
 
@@ -108,8 +107,7 @@ TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, col + row ignore", TAG_IO, (DenseMatrix),
     DataObjectFactory::destroy(m);
 }
 
-TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, INF and NAN parsing", TAG_IO,
-                           (DenseMatrix), (double)) {
+TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, INF and NAN parsing", TAG_IO, (DenseMatrix), (double)) {
     using DT = TestType;
     DT *m = nullptr;
 
@@ -138,8 +136,7 @@ TEMPLATE_PRODUCT_TEST_CASE("ReadCsv, INF and NAN parsing", TAG_IO,
 }
 
 TEST_CASE("ReadCsv, frame of floats", TAG_IO) {
-    ValueTypeCode schema[] = {ValueTypeCode::F64, ValueTypeCode::F64,
-                              ValueTypeCode::F64, ValueTypeCode::F64};
+    ValueTypeCode schema[] = {ValueTypeCode::F64, ValueTypeCode::F64, ValueTypeCode::F64, ValueTypeCode::F64};
     Frame *m = NULL;
 
     size_t numRows = 2;
@@ -167,8 +164,7 @@ TEST_CASE("ReadCsv, frame of floats", TAG_IO) {
 }
 
 TEST_CASE("ReadCsv, frame of uint8s", TAG_IO) {
-    ValueTypeCode schema[] = {ValueTypeCode::UI8, ValueTypeCode::UI8,
-                              ValueTypeCode::UI8, ValueTypeCode::UI8};
+    ValueTypeCode schema[] = {ValueTypeCode::UI8, ValueTypeCode::UI8, ValueTypeCode::UI8, ValueTypeCode::UI8};
     Frame *m = NULL;
 
     size_t numRows = 2;
@@ -196,6 +192,60 @@ TEST_CASE("ReadCsv, frame of uint8s", TAG_IO) {
     DataObjectFactory::destroy(m);
 }
 
+TEST_CASE("ReadCsv, frame of numbers and strings", TAG_IO) {
+    ValueTypeCode schema[] = {ValueTypeCode::UI64, ValueTypeCode::F64, ValueTypeCode::STR, ValueTypeCode::UI64,
+                              ValueTypeCode::F64};
+    Frame *m = NULL;
+
+    size_t numRows = 6;
+    size_t numCols = 5;
+
+    char filename[] = "./test/runtime/local/io/ReadCsv5.csv";
+    char delim = ',';
+
+    readCsv(m, filename, numRows, numCols, delim, schema);
+
+    REQUIRE(m->getNumRows() == numRows);
+    REQUIRE(m->getNumCols() == numCols);
+
+    CHECK(m->getColumn<uint64_t>(0)->get(0, 0) == 222);
+    CHECK(m->getColumn<uint64_t>(0)->get(1, 0) == 444);
+    CHECK(m->getColumn<uint64_t>(0)->get(2, 0) == 555);
+    CHECK(m->getColumn<uint64_t>(0)->get(3, 0) == 777);
+    CHECK(m->getColumn<uint64_t>(0)->get(4, 0) == 111);
+    CHECK(m->getColumn<uint64_t>(0)->get(5, 0) == 222);
+
+    CHECK(m->getColumn<double>(1)->get(0, 0) == 11.5);
+    CHECK(m->getColumn<double>(1)->get(1, 0) == 19.3);
+    CHECK(m->getColumn<double>(1)->get(2, 0) == 29.9);
+    CHECK(m->getColumn<double>(1)->get(3, 0) == 15.2);
+    CHECK(m->getColumn<double>(1)->get(4, 0) == 31.8);
+    CHECK(m->getColumn<double>(1)->get(5, 0) == 13.9);
+
+    CHECK(m->getColumn<std::string>(2)->get(0, 0) == "world");
+    CHECK(m->getColumn<std::string>(2)->get(1, 0) == "sample,");
+    CHECK(m->getColumn<std::string>(2)->get(2, 0) == "line1\nline2");
+    CHECK(m->getColumn<std::string>(2)->get(3, 0) == "");
+    CHECK(m->getColumn<std::string>(2)->get(4, 0) == "\"\\n\\\"abc\"def\\\"");
+    CHECK(m->getColumn<std::string>(2)->get(5, 0) == "");
+
+    CHECK(m->getColumn<uint64_t>(3)->get(0, 0) == 444);
+    CHECK(m->getColumn<uint64_t>(3)->get(1, 0) == 666);
+    CHECK(m->getColumn<uint64_t>(3)->get(2, 0) == 777);
+    CHECK(m->getColumn<uint64_t>(3)->get(3, 0) == 999);
+    CHECK(m->getColumn<uint64_t>(3)->get(4, 0) == 333);
+    CHECK(m->getColumn<uint64_t>(3)->get(5, 0) == 444);
+
+    CHECK(m->getColumn<double>(4)->get(0, 0) == 55.6);
+    CHECK(m->getColumn<double>(4)->get(1, 0) == 77.8);
+    CHECK(m->getColumn<double>(4)->get(2, 0) == 88.9);
+    CHECK(m->getColumn<double>(4)->get(3, 0) == 10.1);
+    CHECK(m->getColumn<double>(4)->get(4, 0) == 16.9);
+    CHECK(m->getColumn<double>(4)->get(5, 0) == 18.2);
+
+    DataObjectFactory::destroy(m);
+}
+
 TEST_CASE("ReadCsv, col + row ignore", TAG_IO) {
     ValueTypeCode schema[] = {ValueTypeCode::UI8, ValueTypeCode::UI8};
     Frame *m = NULL;
@@ -218,8 +268,7 @@ TEST_CASE("ReadCsv, col + row ignore", TAG_IO) {
 }
 
 TEST_CASE("ReadCsv, INF and NAN parsing", TAG_IO) {
-    ValueTypeCode schema[] = {ValueTypeCode::F64, ValueTypeCode::F64,
-                              ValueTypeCode::F64, ValueTypeCode::F64};
+    ValueTypeCode schema[] = {ValueTypeCode::F64, ValueTypeCode::F64, ValueTypeCode::F64, ValueTypeCode::F64};
     Frame *m = NULL;
 
     size_t numRows = 2;
@@ -233,14 +282,10 @@ TEST_CASE("ReadCsv, INF and NAN parsing", TAG_IO) {
     REQUIRE(m->getNumRows() == numRows);
     REQUIRE(m->getNumCols() == numCols);
 
-    CHECK(m->getColumn<double>(0)->get(0, 0) ==
-          -std::numeric_limits<double>::infinity());
-    CHECK(m->getColumn<double>(1)->get(0, 0) ==
-          std::numeric_limits<double>::infinity());
-    CHECK(m->getColumn<double>(2)->get(0, 0) ==
-          -std::numeric_limits<double>::infinity());
-    CHECK(m->getColumn<double>(3)->get(0, 0) ==
-          std::numeric_limits<double>::infinity());
+    CHECK(m->getColumn<double>(0)->get(0, 0) == -std::numeric_limits<double>::infinity());
+    CHECK(m->getColumn<double>(1)->get(0, 0) == std::numeric_limits<double>::infinity());
+    CHECK(m->getColumn<double>(2)->get(0, 0) == -std::numeric_limits<double>::infinity());
+    CHECK(m->getColumn<double>(3)->get(0, 0) == std::numeric_limits<double>::infinity());
 
     CHECK(std::isnan(m->getColumn<double>(0)->get(1, 0)));
     CHECK(std::isnan(m->getColumn<double>(1)->get(1, 0)));
@@ -270,6 +315,54 @@ TEST_CASE("ReadCsv, varying columns", TAG_IO) {
 
     CHECK(m->getColumn<int8_t>(0)->get(1, 0) == 2);
     CHECK(m->getColumn<float>(1)->get(1, 0) == 1.0);
+
+    DataObjectFactory::destroy(m);
+}
+
+TEMPLATE_PRODUCT_TEST_CASE("ReadCsv", TAG_IO, (DenseMatrix), (ALL_STRING_VALUE_TYPES)) {
+    using DT = TestType;
+    DT *m = nullptr;
+
+    size_t numRows = 9;
+    size_t numCols = 3;
+
+    char filename[] = "./test/runtime/local/io/ReadCsvStr.csv";
+    char delim = ',';
+
+    readCsv(m, filename, numRows, numCols, delim);
+
+    REQUIRE(m->getNumRows() == numRows);
+    REQUIRE(m->getNumCols() == numCols);
+
+    CHECK(m->get(0, 0) == "apple, orange");
+    CHECK(m->get(1, 0) == "dog, cat");
+    CHECK(m->get(2, 0) == "table");
+    CHECK(m->get(3, 0) == "\"");
+    CHECK(m->get(4, 0) == "abc\"def");
+    CHECK(m->get(5, 0) == "red, blue\\n");
+    CHECK(m->get(6, 0) == "\\n\\\"abc\"def\\\"");
+    CHECK(m->get(7, 0) == "line1\nline2");
+    CHECK(m->get(8, 0) == "\\\"red, \\\"\\\"");
+
+    CHECK(m->get(0, 1) == "35");
+    CHECK(m->get(1, 1) == "30");
+    CHECK(m->get(2, 1) == "27");
+    CHECK(m->get(3, 1) == "22");
+    CHECK(m->get(4, 1) == "33");
+    CHECK(m->get(5, 1) == "50");
+    CHECK(m->get(6, 1) == "28");
+    CHECK(m->get(7, 1) == "27");
+    CHECK(m->get(8, 1) == "41");
+
+    CHECK(m->get(0, 2) == "Fruit Basket");
+    CHECK(m->get(1, 2) == "Pets");
+    CHECK(m->get(2, 2) == "Furniture Set");
+    CHECK(m->get(3, 2) == "Unknown Item");
+    CHECK(m->get(4, 2) == "No Category\\\"");
+    CHECK(m->get(5, 2) == "");
+    CHECK(m->get(6, 2) == "Mixed string");
+    CHECK(m->get(7, 2) == "with newline");
+    CHECK(m->get(8, 2) == "");
 
     DataObjectFactory::destroy(m);
 }

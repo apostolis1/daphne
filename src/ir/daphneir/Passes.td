@@ -51,6 +51,10 @@ def AggAllLoweringPass : Pass<"lower-agg", "::mlir::func::FuncOp"> {
     let constructor = "mlir::daphne::createAggAllOpLoweringPass()";
 }
 
+def AggDimLoweringPass : Pass<"lower-agg-dim", "::mlir::func::FuncOp"> {
+    let constructor = "mlir::daphne::createAggDimOpLoweringPass()";
+}
+
 def DaphneOpsOptPass : Pass<"opt-daphne", "::mlir::func::FuncOp"> {
     let constructor = "mlir::daphne::createDaphneOptPass()";
 }
@@ -244,9 +248,16 @@ def MatMulOpLoweringPass: Pass<"lower-mm", "::mlir::ModuleOp"> {
   ];
 }
 
+def TransposeOpLoweringPass: Pass<"lower-transpose", "::mlir::func::FuncOp"> {
+    let constructor = "mlir::daphne::createTransposeOpLoweringPass()";
+}
+
 def LowerEwOpPass: Pass<"lower-ew", "::mlir::func::FuncOp"> {
     let constructor = "mlir::daphne::createEwOpLoweringPass()";
 }
 
+def SparsityExploitationPass: Pass<"lower-sparse-exploit", "::mlir::func::FuncOp"> {
+    let constructor = "mlir::daphne::createSparsityExploitationPass()";
+}
 
 #endif // SRC_IR_DAPHNEIR_PASSES_TD

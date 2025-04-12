@@ -1,0 +1,26 @@
+{
+    "numRows": 6,
+    "numCols": 5,
+    "schema": [
+        {
+            "label": "a",
+            "valueType": "ui64"
+        },
+        {
+            "label": "b",
+            "valueType": "f64"
+        },
+        {
+            "label": "c",
+            "valueType": "str"
+        },
+        {
+            "label": "d",
+            "valueType": "ui64"
+        },
+        {
+            "label": "e",
+            "valueType": "f64"
+        }
+    ]
+}
