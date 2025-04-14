@@ -501,6 +501,10 @@ while [[ $# -gt 0 ]]; do
         echo using MPI
         export BUILD_MPI="-DUSE_MPI=ON"
         ;;
+    --hdfs)
+        echo using HDFS
+        export BUILD_HDFS="-DUSE_HDFS=ON"
+        ;;
     --no-papi)
         echo not using PAPI
         export BUILD_PAPI="-DUSE_PAPI=OFF"
@@ -936,6 +940,34 @@ if [ $WITH_DEPS -gt 0 ]; then
     else
       daphne_msg "No need to build eigen again."
     fi
+
+    hawqDirName="hawq-rel-v$hawqVersion"
+    hawqDlTarName="v${hawqVersion}.tar.gz"
+    hawqTarName="${hawqDirName}.tar.gz"
+    hawqInstDirName=$installPrefix
+
+    if [ $BUILD_HDFS == "-DUSE_HDFS=ON" ]; then
+        if ! is_dependency_downloaded "hawq_v${hawqVersion}"; then
+            daphne_msg "Get HAWQ (libhdfs3) version ${hawqVersion}"
+            wget "https://github.com/apache/hawq/archive/refs/tags/rel/${hawqDlTarName}" \
+                -qO "${cacheDir}/${hawqTarName}"
+            tar -xf "$cacheDir/$hawqTarName" -C "$sourcePrefix"
+            daphne_msg "Applying 0005-libhdfs3-remove-gtest-dep.patch"
+            patch -Np1 -i "${patchDir}/0005-libhdfs3-remove-gtest-dep.patch" -d "$sourcePrefix/$hawqDirName"
+            daphne_msg "Applying 0006-libhdfs3-add-cstdint-include.patch"
+            patch -Np1 -i "${patchDir}/0006-libhdfs3-add-cstdint-include.patch" -d "$sourcePrefix/$hawqDirName"
+            dependency_download_success "hawq_v${hawqVersion}"
+        fi
+        if ! is_dependency_installed "hawq_v${hawqVersion}"; then
+            cmake -G Ninja -S "$sourcePrefix/$hawqDirName/depends/libhdfs3" -B "${buildPrefix}/${hawqDirName}" \
+                -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$installPrefix"
+            cmake --build "${buildPrefix}/${hawqDirName}" --target install/strip
+            dependency_install_success "hawq_v${hawqVersion}"
+        else
+              daphne_msg "No need to build HAWQ (libhdfs3) again."
+        fi
+    fi
+
 
         #------------------------------------------------------------------------------
     # Lustreapi
