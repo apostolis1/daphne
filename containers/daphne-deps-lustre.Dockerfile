@@ -42,7 +42,7 @@ RUN apt-get -qq -y update && apt-get -y upgrade \
     libomp-dev  libpfm4-dev libssl-dev libxml2-dev uuid-dev zlib1g-dev \
     build-essential clang gfortran lld llvm llvm-10-tools ninja-build openjdk-11-jdk-headless pkg-config python3 \
     libtool flex bison libpython3-dev libmount-dev libaio-dev libnl-genl-3-dev libkeyutils-dev libyaml-dev libreadline-dev module-assistant debhelper dpatch libsnmp-dev mpi-default-dev quilt swig \
-    libgsasl-dev libkrb5-dev \
+    libgsasl7-dev libkrb5-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN ln -fs /usr/share/zoneinfo/$TZ /etc/localtime
 
