@@ -39,7 +39,7 @@ USE_SUDO=
 #USE_SUDO=sudo
 
 GIT_REPO=daphne
-GIT_BRANCH="lustre-support-build"
+GIT_BRANCH="lustre-support-build-with-hdfs"
 GH_USER="apostolis1"
 DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 
@@ -81,12 +81,13 @@ function build_daphne() {
 #GH_USER="corepointer"
 #DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 
-# DAPHNE_TARGET=daphne-deps
-# BASE_IMAGE=ubuntu:${ubuntuVersion}
-# DAPHNE_TAG=$TIMESTAMP_DATE_${ARCH}
-# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
-# #bulid deps stage
-# build_daphne -deps-lustre
+DAPHNE_TARGET=daphne-deps
+BASE_IMAGE=ubuntu:${ubuntuVersion}
+DAPHNE_TAG=$TIMESTAMP_DATE_${ARCH}
+IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+DAPHNE_BUILD_FLAGS="--hdfs"
+#bulid deps stage
+build_daphne -deps-lustre
 
 ## build ci stage (based on deps stage)
 # DAPHNE_TARGET=github-action
@@ -94,7 +95,7 @@ function build_daphne() {
 # build_daphne -deps
 
 ## switch to main branch to build images from there (by default;only relevant if future-deps branch is used)
-GIT_BRANCH="lustre-support-build"
+GIT_BRANCH="lustre-support-build-with-hdfs"
 GH_USER="apostolis1"
 DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 
@@ -136,15 +137,15 @@ DAPHNE_REPO_URL="https://github.com/$GH_USER/$GIT_REPO.git"
 #------------------------------------------------------------------------------
 # Images for running DAPHNE
 #------------------------------------------------------------------------------
-DAPHNE_TARGET=daphne
-BASE_IMAGE=apostolis1/daphne-deps-lustre
-FINAL_BASE_IMAGE=ubuntu:${ubuntuVersion}
-DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
-IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
-# DAPHNE_BUILD_FLAGS="--mpi"
-DAPHNE_BUILD_FLAGS=
-build_daphne -lustre
-$USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG apostolis1/daphne:latest_${ARCH}_BASE
+# DAPHNE_TARGET=daphne
+# BASE_IMAGE=apostolis1/daphne-deps-lustre
+# FINAL_BASE_IMAGE=ubuntu:${ubuntuVersion}
+# DAPHNE_TAG=${TIMESTAMP_DATE}_${ARCH}_BASE_ubuntu${ubuntuVersion}
+# IMAGE_REPO=apostolis1/$DAPHNE_TARGET-lustre
+# # DAPHNE_BUILD_FLAGS="--mpi"
+# DAPHNE_BUILD_FLAGS=
+# build_daphne -lustre
+# $USE_SUDO docker tag $IMAGE_REPO:$DAPHNE_TAG apostolis1/daphne:latest_${ARCH}_BASE
 
 #-----------------------------------------------------------------------------
 # Images for running DAPHNE (CUDA)
