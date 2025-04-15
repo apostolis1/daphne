@@ -453,6 +453,7 @@ BUILD_FPGAOPENCL="-DUSE_FPGAOPENCL=OFF"
 BUILD_DEBUG="-DCMAKE_BUILD_TYPE=Release"
 BUILD_MPI="-DUSE_MPI=OFF"
 BUILD_PAPI="-DUSE_PAPI=ON"
+BUILD_HDFS="-DUSE_HDFS=OFF"
 WITH_DEPS=1
 WITH_SUBMODULE_UPDATE=1
 
@@ -1077,8 +1078,7 @@ daphne_msg "Build Daphne"
 
 cmake -S "$projectRoot" -B "$daphneBuildDir" -G Ninja -DANTLR_VERSION="$antlrVersion" \
     -DCMAKE_PREFIX_PATH="$installPrefix" \
-    $BUILD_CUDA $BUILD_FPGAOPENCL $BUILD_DEBUG $BUILD_MPI $BUILD_PAPI
-
+    $BUILD_CUDA $BUILD_FPGAOPENCL $BUILD_DEBUG $BUILD_MPI $BUILD_PAPI $BUILD_HDFS
 cmake --build "$daphneBuildDir" --target "$target"
 
 build_ts_end=$(date +%s%N)
