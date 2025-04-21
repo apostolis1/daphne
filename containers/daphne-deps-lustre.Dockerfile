@@ -26,7 +26,7 @@ ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DAPHNE_DIR=/daphne
 ARG DAPHNE_REPO=https://github.com/apostolis1/daphne.git
-ARG DAPHNE_BRANCH=lustre-support-build
+ARG DAPHNE_BRANCH=lustre-support-build-bck
 ARG TIMESTAMP=0
 ARG CREATION_DATE=0
 ARG GIT_HASH=0
@@ -62,10 +62,10 @@ RUN rm -rf ${BUILD_DIR}
 FROM build-cmake AS build
 ARG DAPHNE_DIR=/daphne
 ARG DAPHNE_REPO=https://github.com/apostolis1/daphne.git
-ARG DAPHNE_BRANCH=lustre-support-build
+ARG DAPHNE_BRANCH=lustre-support-build-bck
 RUN git clone --depth=1 --single-branch --branch=$DAPHNE_BRANCH $DAPHNE_REPO $DAPHNE_DIR
 WORKDIR $DAPHNE_DIR
-RUN ./build-lustre.sh --no-fancy --no-submodule-update --installPrefix /usr/local
+RUN ./build-lustre.sh --no-fancy --no-submodule-update --hdfs --installPrefix /usr/local
 RUN find /usr/local -exec file {} \; | grep -e "not stripped" | cut -d ":" -f 1 | xargs strip --strip-unneeded
 RUN rm -rf $DAPHNE_DIR
 RUN ldconfig

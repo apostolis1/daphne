@@ -86,7 +86,10 @@ template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_ASYNC, 
 
 template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTRes> {
     static void apply(DTRes *&res, const char *filename, DCTX(dctx)) {
+        std::filesystem::path filePath(filename);
+        auto extension = filePath.extension().string();
 #if USE_HDFS
+    if (extension == ".hdfs") {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
@@ -129,9 +132,11 @@ template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, D
 
         for (auto &thread : threads_vector)
             thread.join();
+    }
 #endif
         // TODO Make this work when HDFS defined, probably split the functions up and use the file extention or something to decide
         // whether we have lustre or HDFS, or with the compile flag --lustre
+    if (extension == ".lustre") {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
@@ -176,6 +181,6 @@ template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, D
 
         for (auto &thread : threads_vector)
             thread.join();
-        
+    }
     }
 };

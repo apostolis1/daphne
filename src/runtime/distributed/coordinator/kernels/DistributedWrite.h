@@ -89,10 +89,14 @@ template <class DTArg> struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_ASYNC,
 // ----------------------------------------------------------------------------
 // Synchronous GRPC
 // ----------------------------------------------------------------------------
-#ifdef USE_HDFS
 
 template <class DTArg> struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
     static void apply(const DTArg *mat, const char *filename, DCTX(dctx)) {
+
+        std::filesystem::path filePath(filename);
+        auto extension = filePath.extension().string();
+#ifdef USE_HDFS
+        if (extension == ".hdfs") {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
@@ -161,11 +165,8 @@ template <class DTArg> struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, 
         for (auto &thread : threads_vector)
             thread.join();
     }
-};
-#else
-template <class DTArg>
-struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
-    static void apply(const DTArg *mat, const char *filename, DCTX(dctx)) {
+#endif
+        if (extension == ".lustre") {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
@@ -284,8 +285,6 @@ struct DistributedWrite<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTArg> {
         for (auto &thread : threads_vector)
             thread.join();
 
-
+        }
     }
 };
-
-#endif
