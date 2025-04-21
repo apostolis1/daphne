@@ -902,21 +902,41 @@ if [ $WITH_DEPS -gt 0 ]; then
         daphne_msg "No need to build Arrow again."
     fi
     #------------------------------------------------------------------------------
+    # fmt
+    #------------------------------------------------------------------------------
+    fmtDirName="fmt-$fmtVersion"
+    fmtArtifactFileName=$fmtDirName.zip
+    if ! is_dependency_downloaded "fmt_v${fmtVersion}"; then
+        rm -rf "${sourcePrefix:?}/${fmtDirName}"
+        wget "https://github.com/fmtlib/fmt/releases/download/${fmtVersion}/$fmtArtifactFileName" -qO  "$cacheDir/$fmtArtifactFileName"
+        unzip -q "$cacheDir/$fmtArtifactFileName" -d "$sourcePrefix"
+        dependency_download_success "fmt_v${fmtVersion}"
+    fi
+    if ! is_dependency_installed "fmt_v${fmtVersion}"; then
+        cmake -G Ninja -S "${sourcePrefix}/${fmtDirName}" -B "${buildPrefix}/${fmtDirName}" \
+            -DCMAKE_INSTALL_PREFIX="${installPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DFMT_MASTER_PROJECT=OFF
+        cmake --build "${buildPrefix}/${fmtDirName}" --target install/strip
+        dependency_install_success "fmt_v${fmtVersion}"
+    else
+        daphne_msg "No need to build fmt again."
+    fi
+    #------------------------------------------------------------------------------
     # spdlog
     #------------------------------------------------------------------------------
     spdlogDirName="spdlog-$spdlogVersion"
     spdlogArtifactFileName=$spdlogDirName.tar.gz
     if ! is_dependency_downloaded "spdlog_v${spdlogVersion}"; then
         rm -rf "${sourcePrefix:?}/${spdlogDirName}"
-        wget "https://github.com/gabime/spdlog/archive/refs/tags/v$spdlogVersion.tar.gz" -qO \
+        # changed URL scheme due to  temporarily use tip of main branch (2024-10-03)
+#        wget "https://github.com/gabime/spdlog/archive/refs/tags/v$spdlogVersion.tar.gz" -qO \
+        wget https://github.com/gabime/spdlog/archive/$spdlogVersion.tar.gz -qO \
             "$cacheDir/$spdlogArtifactFileName"
         tar xzf "$cacheDir/$spdlogArtifactFileName" --directory="$sourcePrefix"
         dependency_download_success "spdlog_v${spdlogVersion}"
     fi
-
     if ! is_dependency_installed "spdlog_v${spdlogVersion}"; then
         cmake -G Ninja -S "${sourcePrefix}/${spdlogDirName}" -B "${buildPrefix}/${spdlogDirName}" \
-            -DCMAKE_INSTALL_PREFIX="${installPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            -DSPDLOG_FMT_EXTERNAL=ON -DCMAKE_INSTALL_PREFIX="${installPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         cmake --build "${buildPrefix}/${spdlogDirName}" --target install/strip
         dependency_install_success "spdlog_v${spdlogVersion}"
     else
