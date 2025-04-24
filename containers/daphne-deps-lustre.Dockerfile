@@ -21,7 +21,7 @@
 
 # defaults:
 ARG BASE_IMAGE=ubuntu:20.04
-ARG CMAKE_VERSION=3.29.3
+ARG CMAKE_VERSION=3.30.3
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DAPHNE_DIR=/daphne
@@ -64,9 +64,11 @@ FROM build-cmake AS build
 ARG DAPHNE_DIR=/daphne
 ARG DAPHNE_REPO=https://github.com/apostolis1/daphne.git
 ARG DAPHNE_BRANCH=lustre-support-build-bck
+ARG DAPHNE_BUILD_FLAGS="--mpi --hdfs"
+
 RUN git clone --depth=1 --single-branch --branch=$DAPHNE_BRANCH $DAPHNE_REPO $DAPHNE_DIR
 WORKDIR $DAPHNE_DIR
-RUN ./build-lustre.sh --no-fancy --no-submodule-update --hdfs --installPrefix /usr/local
+RUN PATH=/usr/local/bin:$PATH LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ./build-lustre.sh --no-fancy --no-submodule-update --installPrefix /usr/local $DAPHNE_BUILD_FLAGS
 RUN find /usr/local -exec file {} \; | grep -e "not stripped" | cut -d ":" -f 1 | xargs strip --strip-unneeded
 RUN rm -rf $DAPHNE_DIR
 RUN ldconfig
