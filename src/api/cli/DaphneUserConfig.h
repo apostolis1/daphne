@@ -97,6 +97,13 @@ struct DaphneUserConfig {
     std::string hdfs_Address = "";
     std::string hdfs_username = "";
 
+    // lustre
+
+    bool use_lustre = false;
+    int lustre_stripe_size = 65536;
+    int lustre_stripe_count = 1;
+    int lustre_osts = 1;
+
     // minimum considered log level (e.g., no logging below ERROR (essentially
     // suppressing WARN, INFO, DEBUG and TRACE)
     spdlog::level::level_enum log_level_limit = spdlog::level::err;

@@ -64,6 +64,10 @@ struct DaphneConfigJsonParams {
     inline static const std::string USE_HDFS_ = "useHdfs";
     inline static const std::string HDFS_ADDRESS = "hdfsAddress";
     inline static const std::string HDFS_USERNAME = "hdfsUsername";
+    inline static const std::string USE_LUSTRE_ = "useLustre";
+    inline static const std::string LUSTRE_STRIPE_SIZE = "lustreStripeSize";
+    inline static const std::string LUSTRE_STRIPE_COUNT = "lustreStripeCount";
+    inline static const std::string LUSTRE_OSTS = "lustreOSTS";
     inline static const std::string CUDA_DEVICES = "cuda_devices";
     inline static const std::string LIB_DIR = "libdir";
     inline static const std::string DAPHNEDSL_IMPORT_PATHS = "daphnedsl_import_paths";
@@ -109,6 +113,10 @@ struct DaphneConfigJsonParams {
                                                      USE_HDFS_,
                                                      HDFS_ADDRESS,
                                                      HDFS_USERNAME,
+        USE_LUSTRE_,
+        LUSTRE_STRIPE_SIZE,
+        LUSTRE_STRIPE_COUNT,
+        LUSTRE_OSTS,
                                                      CUDA_DEVICES,
                                                      LIB_DIR,
                                                      DAPHNEDSL_IMPORT_PATHS,

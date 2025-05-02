@@ -26,6 +26,7 @@
 #include <runtime/local/io/FileMetaData.h>
 #include <runtime/local/io/WriteCsv.h>
 #include <runtime/local/io/WriteDaphne.h>
+#include <runtime/local/io/lustre/WriteLustre.h>
 #if USE_HDFS
 #include <runtime/local/io/HDFS/WriteHDFS.h>
 #endif
@@ -69,6 +70,9 @@ template <typename VT> struct Write<DenseMatrix<VT>> {
             FileMetaData metaData(arg->getNumRows(), arg->getNumCols(), true, ValueTypeUtils::codeFor<VT>);
             MetaDataParser::writeMetaData(filename, metaData);
             writeDaphne(arg, filename);
+        }
+        else if (ext == "lustre") {
+            writeLustre(arg, filename, ctx);
 #if USE_HDFS
         } else if (ext == "hdfs") {
             HDFSMetaData hdfs = {true, filename};

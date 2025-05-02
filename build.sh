@@ -996,6 +996,29 @@ if [ $WITH_DEPS -gt 0 ]; then
     fi
 
     #------------------------------------------------------------------------------
+    # Lustreapi
+    #------------------------------------------------------------------------------
+    
+    # TODO: 
+    # This path should be documented somewhere else too probably
+    # We can even use the $installPrefix, the choice of /opt is because lustre is using some kernel libaries and
+    # it is generally a good idea to install it somewhere else, but here it doesn't make a difference
+    lustreInstallPrefix="/opt/lustre"
+    daphne_msg "Downloading lustre"
+    mkdir -p ${sourcePrefix}/lustre
+    git clone https://github.com/lustre/lustre-release --depth=1 --branch v2_16_51 ${sourcePrefix}/lustre
+    daphne_msg "Success downloading lustre"
+    daphne_msg "Applying lustre patch"
+    patch -Np1 -i "${patchDir}/0007-lustreapi-guard-fallthrough.patch" -d "${sourcePrefix}/lustre"
+    daphne_msg "Building lustre"
+    cd ${sourcePrefix}/lustre
+    sh autogen.sh
+    ./configure --disable-server --enable-client --prefix="${lustreInstallPrefix}"
+    make
+    make install
+    daphne_msg "Success building lustre"
+
+    #------------------------------------------------------------------------------
     # Build MLIR
     #------------------------------------------------------------------------------
     # We rarely need to build MLIR/LLVM, only during the first build of the
@@ -1107,6 +1130,7 @@ fi
 
 daphne_msg "Build Daphne"
 
+# TODO: Maybe add this to the path DCMAKE_PREFIX_PATH /opt/lustre/include
 cmake -S "$projectRoot" -B "$daphneBuildDir" -G Ninja -DANTLR_VERSION="$antlrVersion" \
     -DCMAKE_PREFIX_PATH="$installPrefix" \
     $BUILD_CUDA $BUILD_FPGAOPENCL $BUILD_DEBUG $BUILD_MPI $BUILD_HDFS $BUILD_PAPI

@@ -138,5 +138,9 @@ if(USE_HDFS)
         find_library(LIBHDFS3 NAMES libhdfs3.so HINTS ${PROJECT_BINARY_DIR}/installed/lib REQUIRED)
 endif()
 
-target_link_libraries(KernelObjLib PUBLIC ${LIBS} ${MPI_LIBRARIES} ${PAPI_LIB} ${HWLOC_LIB} ${LIBHDFS3})
-target_link_libraries(AllKernels PUBLIC ${LIBS} ${MPI_LIBRARIES} ${PAPI_LIB} ${HWLOC_LIB} ${LIBHDFS3})
+# find_library(LIBLUSTRE NAMES liblustreapi.a HINTS ${PROJECT_BINARY_DIR}/installed/lib REQUIRED)
+find_library(LIBLUSTRE NAMES lustreapi HINTS /opt/lustre/lib REQUIRED)
+
+
+target_link_libraries(KernelObjLib PUBLIC ${LIBS} ${MPI_LIBRARIES} ${PAPI_LIB} ${HWLOC_LIB} ${LIBHDFS3} ${LIBLUSTRE})
+target_link_libraries(AllKernels PUBLIC ${LIBS} ${MPI_LIBRARIES} ${PAPI_LIB} ${HWLOC_LIB} ${LIBHDFS3} ${LIBLUSTRE})

@@ -35,6 +35,8 @@ else()
         set(LIBHDFS3 "")
 endif()
 
+find_library(LIBLUSTRE NAMES lustreapi HINTS /opt/lustre/lib REQUIRED)
+
 set(LIBS
         ${dialect_libs}
         ${conversion_libs}
@@ -48,6 +50,7 @@ set(LIBS
         Proto
         DaphneCatalogParser
         ${LIBHDFS3}
+        ${LIBLUSTRE}
         DaphneMetaDataParser
         Arrow::arrow_shared
         Parquet::parquet_shared

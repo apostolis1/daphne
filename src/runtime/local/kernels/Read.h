@@ -30,6 +30,7 @@
 #if USE_HDFS
 #include <runtime/local/io/HDFS/ReadHDFS.h>
 #endif
+#include <runtime/local/io/lustre/ReadLustre.h>
 #include <map>
 #include <regex>
 #include <string>
@@ -44,6 +45,7 @@ struct FileExt {
 #if USE_HDFS
         m["hdfs"] = 4;
 #endif
+		m["lustre"] = 5;
         return m;
     }
     static const std::map<std::string, int> map;
@@ -120,6 +122,16 @@ template <typename VT> struct Read<DenseMatrix<VT>> {
             }
             break;
 #endif
+        case 5:
+            if constexpr (std::is_same<VT, std::string>::value)
+                throw std::runtime_error("reading string-valued Lustre files is not supported (yet)");
+            else {
+                if (res == nullptr)
+                    res = DataObjectFactory::create<DenseMatrix<VT>>(
+                        fmd.numRows, fmd.numCols, false);
+                readLustre(res, filename, ctx);
+            }
+            break;
         default:
             throw std::runtime_error("file extension not supported");
         }

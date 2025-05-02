@@ -219,6 +219,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(/opt/lustre/include/)
 
 # *****************************************************************************
 # Descend to subdirectories

@@ -41,6 +41,9 @@ RUN apt-get -qq -y update && apt-get -y upgrade \
     ca-certificates file git openssh-client unzip wget tar \
     libgsasl-dev libkrb5-dev libomp-dev  libpfm4-dev libssl-dev libxml2-dev uuid-dev zlib1g-dev \
     build-essential clang gfortran lld llvm llvm-18-tools ninja-build openjdk-11-jdk-headless pkg-config python3 \
+    libtool pkg-config flex bison libpython3-dev libmount-dev libaio-dev libssl-dev libnl-genl-3-dev libkeyutils-dev libyaml-dev libreadline-dev module-assistant debhelper \
+    libsnmp-dev mpi-default-dev quilt swig \
+    linux-headers-$(uname -r) \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN ln -fs /usr/share/zoneinfo/$TZ /etc/localtime
 
@@ -87,6 +90,10 @@ COPY --from=build /usr/local/bin/ /usr/local/bin/
 COPY --from=build /usr/local/include/ /usr/local/include/
 COPY --from=build /usr/local/lib/ /usr/local/lib/
 COPY --from=build /usr/local/share/ /usr/local/share/
+# The following are needed for lustre
+COPY --from=build /opt/lustre /opt/lustre
+COPY --from=build /usr/include/linux/lustre /usr/include/linux/lustre
+COPY --from=build /usr/include/linux/lnet /usr/include/linux/lnet
 RUN ldconfig
 
 FROM daphneeu/daphne-deps AS github-action

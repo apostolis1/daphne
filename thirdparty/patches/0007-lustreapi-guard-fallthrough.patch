@@ -1,0 +1,21 @@
+--- lustre-release/lustre/include/lustre/lustreapi.h	2025-04-30 15:13:22.617722361 +0000
++++ /opt/lustre/include/lustre/lustreapi.h	2025-05-01 21:14:11.462787409 +0000
+@@ -45,6 +45,9 @@
+ #define LOV_PATTERN_DEFAULT	0xffffffff
+ #endif
+ 
++#ifdef __cplusplus
++  // In C++, rely on [[fallthrough]] or Abseil/etc. to handle it
++#else
+ #ifndef fallthrough
+ # if defined(__GNUC__) && __GNUC__ >= 7
+ #  define fallthrough  __attribute__((fallthrough)) /* fallthrough */
+@@ -52,7 +55,7 @@
+ #  define fallthrough do {} while (0)  /* fallthrough */
+ # endif
+ #endif
+-
++#endif
+ typedef struct statx lstatx_t;
+ 
+ #define lustre_fid struct lu_fid

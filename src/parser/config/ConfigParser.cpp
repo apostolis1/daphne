@@ -130,7 +130,24 @@ void ConfigParser::readUserConfig(const std::string &filename, DaphneUserConfig 
     if (keyExists(jf, DaphneConfigJsonParams::HDFS_ADDRESS))
         config.hdfs_Address = jf.at(DaphneConfigJsonParams::HDFS_ADDRESS).get<std::string>();
     if (keyExists(jf, DaphneConfigJsonParams::HDFS_USERNAME))
-        config.hdfs_username = jf.at(DaphneConfigJsonParams::HDFS_USERNAME).get<std::string>();
+        config.hdfs_username =
+            jf.at(DaphneConfigJsonParams::HDFS_USERNAME).get<std::string>();
+    // Lustre
+    if (keyExists(jf, DaphneConfigJsonParams::USE_LUSTRE_))
+        config.use_lustre = jf.at(DaphneConfigJsonParams::USE_LUSTRE_).get<bool>();
+    
+    if (keyExists(jf, DaphneConfigJsonParams::LUSTRE_STRIPE_SIZE))
+        config.lustre_stripe_size =
+            jf.at(DaphneConfigJsonParams::LUSTRE_STRIPE_SIZE).get<int>();
+    
+    if (keyExists(jf, DaphneConfigJsonParams::LUSTRE_STRIPE_COUNT))
+        config.lustre_stripe_count =
+            jf.at(DaphneConfigJsonParams::LUSTRE_STRIPE_COUNT).get<int>();
+    
+    if (keyExists(jf, DaphneConfigJsonParams::LUSTRE_OSTS))
+        config.lustre_osts =
+            jf.at(DaphneConfigJsonParams::LUSTRE_OSTS).get<int>();
+
 #ifdef USE_CUDA
     if (keyExists(jf, DaphneConfigJsonParams::CUDA_DEVICES))
         config.cuda_devices = jf.at(DaphneConfigJsonParams::CUDA_DEVICES).get<std::vector<int>>();
