@@ -86,7 +86,10 @@ template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_ASYNC, 
 
 template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, DTRes> {
     static void apply(DTRes *&res, const char *filename, DCTX(dctx)) {
+        std::filesystem::path filePath(filename);
+        auto extension = filePath.extension().string();
 #if USE_HDFS
+    if (extension == ".hdfs") {
         auto ctx = DistributedContext::get(dctx);
         auto workers = ctx->getWorkers();
 
@@ -129,6 +132,55 @@ template <class DTRes> struct DistributedRead<ALLOCATION_TYPE::DIST_GRPC_SYNC, D
 
         for (auto &thread : threads_vector)
             thread.join();
+    }
 #endif
+        // TODO Make this work when HDFS defined, probably split the functions up and use the file extention or something to decide
+        // whether we have lustre or HDFS, or with the compile flag --lustre
+    if (extension == ".lustre") {
+        auto ctx = DistributedContext::get(dctx);
+        auto workers = ctx->getWorkers();
+
+        std::vector<std::thread> threads_vector;
+        LoadPartitioningDistributed<DTRes, AllocationDescriptorGRPC> partioner(
+            DistributionSchema::DISTRIBUTE, res, dctx);
+        
+        while (partioner.HasNextChunk()) {
+            auto lustreFn = std::string(filename);
+            auto dp = partioner.GetNextChunk();
+
+            auto workerAddr =
+                dynamic_cast<AllocationDescriptorGRPC *>(dp->allocation.get())
+                    ->getLocation();
+             std::thread t([=, &res]() {
+                auto stub = ctx->stubs[workerAddr].get();
+
+                distributed::LustreFile fileData;
+                fileData.set_filename(lustreFn);
+                fileData.set_start_row(dp->range->r_start);
+                fileData.set_num_rows(dp->range->r_len);
+                fileData.set_num_cols(dp->range->c_len);
+
+                grpc::ClientContext grpc_ctx;
+                distributed::StoredData response;
+
+                auto status = stub->ReadLustre(&grpc_ctx, fileData, &response);
+                if (!status.ok()) {
+                    std::cout << "Status not ok\n";
+                    throw std::runtime_error(status.error_message());
+                }
+                DistributedData newData;
+                newData.identifier = response.identifier();
+                newData.numRows = response.num_rows();
+                newData.numCols = response.num_cols();
+                newData.isPlacedAtWorker = true;
+                dynamic_cast<AllocationDescriptorGRPC &>(*(dp->allocation))
+                    .updateDistributedData(newData);
+            });
+            threads_vector.push_back(move(t));
+        }
+
+        for (auto &thread : threads_vector)
+            thread.join();
+    }
     }
 };
