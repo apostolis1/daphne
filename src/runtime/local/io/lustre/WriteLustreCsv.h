@@ -124,7 +124,7 @@ struct WriteLustreCsv<DenseMatrix<VT>> {
                 }
 
                 std::string c = j < (arg->getNumCols() - 1) ? "," : "\n"; 
-                if (sizeof(buffer) > charsWrittenToBuffer + sizeof(c)) 
+                if (sizeof(buffer) > charsWrittenToBuffer + c.size()) 
                 {
                     sprintf(buffer+charsWrittenToBuffer, c.c_str());
                     charsWrittenToBuffer++;
