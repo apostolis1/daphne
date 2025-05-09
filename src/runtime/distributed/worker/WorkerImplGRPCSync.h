@@ -44,6 +44,11 @@ class WorkerImplGRPCSync : public WorkerImpl, public distributed::Worker::Servic
     grpc::Status ReadHDFS(::grpc::ServerContext *context, const ::distributed::HDFSFile *request,
                           ::distributed::StoredData *response) override;
 #endif
+    grpc::Status ReadLustre(::grpc::ServerContext *context, const ::distributed::LustreFile *request,
+                          ::distributed::StoredData *response) override;
+    grpc::Status WriteLustre(::grpc::ServerContext *context, const ::distributed::LustreWriteInfo *request,
+                          ::distributed::Empty *response) override;
+
     grpc::Status Store(::grpc::ServerContext *context, ::grpc::ServerReader<::distributed::Data> *reader,
                        ::distributed::StoredData *response) override;
     grpc::Status Compute(::grpc::ServerContext *context, const ::distributed::Task *request,
