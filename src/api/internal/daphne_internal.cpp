@@ -134,6 +134,7 @@ int startDAPHNE(int argc, const char **argv, DaphneLibResult *daphneLibRes, int 
     static OptionCategory schedulingOptions("Advanced Scheduling Knobs");
     static OptionCategory distributedBackEndSetupOptions("Distributed Backend Knobs");
     static OptionCategory HDFSOptions("HDFS Knobs");
+    static OptionCategory LustreOptions("Lustre Knobs");
 
     // Options ----------------------------------------------------------------
 
@@ -163,6 +164,21 @@ int startDAPHNE(int argc, const char **argv, DaphneLibResult *daphneLibRes, int 
     static opt<string> hdfs_username("hdfs-username", cat(HDFSOptions), desc("Username of the HDFS filesystem."),
                                      init(""));
 
+    // Lustre knobs
+    static opt<bool> use_lustre("enable-lustre", cat(LustreOptions),
+                              desc("Enable Lustre filesystem"));
+    
+    static opt<int> lustre_stripe_size(
+        "lustre-stripe-size", cat(LustreOptions),
+        desc("Lustre stripe size."), init(65536));
+    
+    static opt<int> lustre_stripe_count(
+        "lustre-stripe-count", cat(LustreOptions),
+        desc("Lustre stripe count."), init(1));
+    static opt<int> lustre_osts(
+        "lustre-osts", cat(LustreOptions),
+        desc("Lustre number of OSTs."), init(1));
+   
     // Scheduling options
     using enum SelfSchedulingScheme;
     using enum QueueTypeOption;
@@ -448,6 +464,20 @@ int startDAPHNE(int argc, const char **argv, DaphneLibResult *daphneLibRes, int 
                                  "not build with --hdfs option\n");
     }
 #endif
+
+    // Lustre
+    if (use_lustre) {
+        user_config.use_lustre = use_lustre;
+    }
+    if (lustre_stripe_size != 65536) {
+        user_config.lustre_stripe_size = lustre_stripe_size;
+    }
+    if (lustre_stripe_count != 1) {
+        user_config.lustre_stripe_count = lustre_stripe_count;
+    }
+    if (lustre_osts != 1) {
+        user_config.lustre_osts = lustre_osts;
+    }
 
     for (auto explain : explainArgList) {
         switch (explain) {
